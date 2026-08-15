@@ -31,7 +31,7 @@ jobs:
         with:
           # Reads the pinned pnpm version from package.json → packageManager.
           package-manager: pnpm
-          node-version: 22
+          node-version: 24
 
   deploy:
     name: Deploy
