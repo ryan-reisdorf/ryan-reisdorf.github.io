@@ -1,0 +1,28 @@
+{
+  "name": "ryan-reisdorf.github.io",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "lint:tokens": "node scripts/check-tokens.mjs",
+    "check": "astro check",
+    "verify": "pnpm run lint:tokens && pnpm run check && pnpm run build"
+  },
+  "dependencies": {
+    "@astrojs/rss": "^4.0.19",
+    "@astrojs/sitemap": "^3.7.3",
+    "astro": "^7.2.2",
+    "zod": "^4.4.3"
+  },
+  "packageManager": "pnpm@11.21.0",
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "typescript": "^6.0.3"
+  }
+}

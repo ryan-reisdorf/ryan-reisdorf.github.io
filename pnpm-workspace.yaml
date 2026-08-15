@@ -1,0 +1,5 @@
+# pnpm 11 reads build-script approvals from here, not from package.json.
+# esbuild (a Vite dependency) ships a postinstall that validates its prebuilt
+# platform binary. Allowing it keeps local and CI installs identical.
+onlyBuiltDependencies:
+  - esbuild

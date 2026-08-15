@@ -1,0 +1,103 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { links } from '../data/site';
+
+/** Anything off-site opens with rel="noopener"; mailto and local paths don't need it. */
+const isExternal = (href: string) => /^https?:\/\//.test(href);
+---
+
+<BaseLayout
+  title="Links"
+  description="Where to find me — GitHub, LinkedIn, email, and résumé."
+>
+  <div class="container container--narrow">
+    <header class="page-head">
+      <h1>Links</h1>
+      <p>Everywhere I actually exist online.</p>
+    </header>
+
+    <ul class="hub">
+      {
+        links.map((link) => (
+          <li>
+            <a href={link.href} rel={isExternal(link.href) ? 'me noopener' : undefined}>
+              <span class="label">
+                {link.label}
+                {isExternal(link.href) && (
+                  <span class="external" aria-hidden="true">
+                    ↗
+                  </span>
+                )}
+              </span>
+              {link.description && <span class="description">{link.description}</span>}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</BaseLayout>
+
+<style>
+  .page-head {
+    margin-block-end: var(--space-lg);
+  }
+
+  h1 {
+    font-size: var(--text-2xl);
+  }
+
+  .page-head p {
+    margin-block-start: var(--space-2xs);
+    color: var(--color-text-muted);
+  }
+
+  .hub {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+    list-style: none;
+    padding: 0;
+  }
+
+  .hub a {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3xs);
+    padding: var(--space-sm);
+    background-color: var(--color-surface);
+    border: var(--border);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    transition:
+      border-color var(--duration-fast) var(--ease),
+      background-color var(--duration-fast) var(--ease);
+  }
+
+  .hub a:hover {
+    background-color: var(--color-surface-raised);
+    border-color: var(--color-border-strong);
+  }
+
+  .label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3xs);
+    color: var(--color-text);
+    font-weight: var(--weight-medium);
+  }
+
+  .hub a:hover .label {
+    color: var(--color-accent);
+  }
+
+  .external {
+    color: var(--color-text-subtle);
+    font-size: var(--text-xs);
+  }
+
+  .description {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+  }
+</style>

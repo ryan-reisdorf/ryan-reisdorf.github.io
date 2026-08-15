@@ -1,0 +1,45 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 654 >>
+stream
+BT
+/F2 20 Tf 1 0 0 1 72 720 Tm (Ryan Reisdorf - Resume) Tj
+/F1 11 Tf 1 0 0 1 72 690 Tm (PLACEHOLDER) Tj
+/F1 11 Tf 1 0 0 1 72 660 Tm (This file is a stand-in so the download link on /resume works.) Tj
+/F1 11 Tf 1 0 0 1 72 640 Tm (Replace it with a real export - see README, 'Regenerating the PDF':) Tj
+/F1 11 Tf 1 0 0 1 72 610 Tm (1. Fill in src/data/resume.ts \(it is the single source of truth\).) Tj
+/F1 11 Tf 1 0 0 1 72 590 Tm (2. Run 'pnpm dev' and open http://localhost:4321/resume) Tj
+/F1 11 Tf 1 0 0 1 72 570 Tm (3. Print to PDF \(print styles already strip the site chrome\).) Tj
+/F1 11 Tf 1 0 0 1 72 550 Tm (4. Save over public/resume.pdf) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000251 00000 n 
+0000000956 00000 n 
+0000001026 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+1101
+%%EOF

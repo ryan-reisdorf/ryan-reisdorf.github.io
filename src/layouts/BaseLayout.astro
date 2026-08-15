@@ -1,0 +1,109 @@
+---
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { site } from '../data/site';
+
+interface Props {
+  /** Page title. Rendered as "<title> — Ryan Reisdorf" unless this is the home page. */
+  title: string;
+  /** Meta description + OG/Twitter description. Falls back to the site description. */
+  description?: string;
+  /** Absolute or root-relative path to a 1200×630 image. Falls back to the site default. */
+  ogImage?: string;
+  /** 'website' for pages, 'article' for project writeups. */
+  ogType?: 'website' | 'article';
+  /** Set on the home page so the title isn't "Ryan Reisdorf — Ryan Reisdorf". */
+  isHome?: boolean;
+  /** Emit <meta name="robots" content="noindex"> — used for drafts and 404. */
+  noindex?: boolean;
+  /** ISO date for article:published_time on project pages. */
+  publishedDate?: string;
+}
+
+const {
+  title,
+  description = site.description,
+  ogImage = site.ogImage,
+  ogType = 'website',
+  isHome = false,
+  noindex = false,
+  publishedDate,
+} = Astro.props;
+
+const pageTitle = isHome ? `${site.title} — ${site.tagline}` : `${title} — ${site.title}`;
+
+// Astro.site comes from `site` in astro.config.mjs; new URL() gives us the
+// absolute URLs that Open Graph and canonical tags require.
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const ogImageURL = new URL(ogImage, Astro.site);
+---
+
+<!doctype html>
+<html lang={site.locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+    {noindex && <meta name="robots" content="noindex, follow" />}
+
+    <!-- Icons -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content={ogType} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:image" content={ogImageURL} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content={site.title} />
+    <meta property="og:locale" content={site.locale.replace('-', '_')} />
+    {publishedDate && <meta property="article:published_time" content={publishedDate} />}
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageURL} />
+
+    <!-- Feed autodiscovery. The feed exists now so readers/aggregators can
+         find it the day a blog is added; today it carries projects. -->
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title={`${site.title} — Projects`}
+      href={new URL('rss.xml', Astro.site)}
+    />
+
+    <slot name="head" />
+  </head>
+
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <Header />
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>
+
+<style>
+  main {
+    flex: 1 0 auto;
+    padding-block: var(--space-xl) var(--space-2xl);
+  }
+
+  /* Programmatic focus target for the skip link — never show a ring for it,
+     since the user is looking at the content, not a control. */
+  main:focus {
+    outline: none;
+  }
+</style>

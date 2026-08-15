@@ -1,0 +1,225 @@
+---
+import ProjectCard from './ProjectCard.astro';
+import { tagSlug, type Project } from '../lib/projects';
+
+interface Props {
+  projects: Project[];
+  tags: Array<{ tag: string; count: number }>;
+  /** The tag currently being filtered on, or null for "All". */
+  activeTag?: string | null;
+}
+
+const { projects, tags, activeTag = null } = Astro.props;
+
+/*
+ * PROGRESSIVE ENHANCEMENT CONTRACT
+ * --------------------------------
+ * Every variant of this page renders the SAME full card set. Cards that don't
+ * match the active tag get the `hidden` attribute at build time.
+ *
+ *   - JS disabled: `hidden` is honoured by the browser, so /projects/tags/php
+ *     shows exactly the PHP projects. The tag chips are ordinary links to
+ *     real, statically-generated pages. Everything works.
+ *   - JS enabled:  the script below intercepts chip clicks, flips `hidden`
+ *     in place, and pushState()s the same URL the link would have gone to.
+ *     No navigation, no flash, and the URL stays shareable and reloadable.
+ *
+ * The full set being present in the DOM on every variant is what lets the
+ * enhanced path filter without a round trip.
+ */
+const isVisible = (project: Project) =>
+  activeTag === null || project.data.tags.includes(activeTag);
+
+const visibleCount = projects.filter(isVisible).length;
+---
+
+<div class="browser" data-project-browser>
+  <nav class="filter" aria-label="Filter projects by tag">
+    <ul>
+      <li>
+        <a
+          href="/projects"
+          data-tag-link
+          data-tag=""
+          aria-current={activeTag === null ? 'page' : undefined}
+        >
+          All <span class="count">{projects.length}</span>
+        </a>
+      </li>
+      {
+        tags.map(({ tag, count }) => (
+          <li>
+            <a
+              href={`/projects/tags/${tagSlug(tag)}`}
+              data-tag-link
+              data-tag={tag}
+              aria-current={activeTag === tag ? 'page' : undefined}
+            >
+              {tag} <span class="count">{count}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+
+  <!-- Announces the filter result to screen readers when JS swaps it. -->
+  <p class="status" role="status" data-filter-status>
+    Showing {visibleCount} of {projects.length} projects{activeTag ? ` tagged “${activeTag}”` : ''}.
+  </p>
+
+  <ul class="grid" data-project-grid>
+    {
+      projects.map((project) => (
+        <li data-tags={project.data.tags.join('|')} hidden={!isVisible(project)}>
+          <ProjectCard project={project} />
+        </li>
+      ))
+    }
+  </ul>
+
+  <p class="empty" data-empty-message hidden={visibleCount > 0}>
+    No projects match that tag yet.
+  </p>
+</div>
+
+<script>
+  // Enhancement only. If this never runs, the server-rendered pages and the
+  // real <a href> links already deliver the full feature.
+  const browser = document.querySelector<HTMLElement>('[data-project-browser]');
+
+  if (browser) {
+    const grid = browser.querySelector<HTMLElement>('[data-project-grid]')!;
+    const status = browser.querySelector<HTMLElement>('[data-filter-status]')!;
+    const empty = browser.querySelector<HTMLElement>('[data-empty-message]')!;
+    const links = [...browser.querySelectorAll<HTMLAnchorElement>('[data-tag-link]')];
+    const items = [...grid.querySelectorAll<HTMLLIElement>('li')];
+    const total = items.length;
+
+    function apply(tag: string, { push }: { push: boolean }) {
+      let visible = 0;
+
+      for (const item of items) {
+        const tags = (item.dataset.tags ?? '').split('|').filter(Boolean);
+        const match = tag === '' || tags.includes(tag);
+        item.hidden = !match;
+        if (match) visible += 1;
+      }
+
+      for (const link of links) {
+        const isActive = (link.dataset.tag ?? '') === tag;
+        if (isActive) link.setAttribute('aria-current', 'page');
+        else link.removeAttribute('aria-current');
+      }
+
+      status.textContent =
+        `Showing ${visible} of ${total} projects` + (tag ? ` tagged “${tag}”.` : '.');
+      empty.hidden = visible > 0;
+
+      if (push) {
+        const href = links.find((l) => (l.dataset.tag ?? '') === tag)?.href;
+        if (href) history.pushState({ tag }, '', href);
+      }
+    }
+
+    browser.addEventListener('click', (event) => {
+      const link = (event.target as HTMLElement).closest<HTMLAnchorElement>('[data-tag-link]');
+      if (!link) return;
+
+      // Leave modified clicks (new tab, download, etc.) to the browser.
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+        return;
+
+      event.preventDefault();
+      apply(link.dataset.tag ?? '', { push: true });
+    });
+
+    // Back/forward should restore the filter rather than leave a stale view.
+    window.addEventListener('popstate', (event) => {
+      const tag = (event.state as { tag?: string } | null)?.tag;
+      if (typeof tag === 'string') {
+        apply(tag, { push: false });
+      } else {
+        // Landed on an entry we didn't push — derive the tag from the URL.
+        const match = location.pathname.match(/\/projects\/tags\/([^/]+)/);
+        const slug = match?.[1] ?? '';
+        const link = links.find((l) => l.pathname.endsWith(`/tags/${slug}`));
+        apply(slug ? (link?.dataset.tag ?? '') : '', { push: false });
+      }
+    });
+  }
+</script>
+
+<style>
+  .browser {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .filter ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
+    list-style: none;
+    padding: 0;
+  }
+
+  .filter a {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--space-3xs);
+    padding: var(--space-3xs) var(--space-xs);
+    background-color: var(--color-surface);
+    border: var(--border);
+    border-radius: var(--radius-full);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    text-decoration: none;
+  }
+
+  .filter a:hover {
+    border-color: var(--color-border-strong);
+    color: var(--color-text);
+  }
+
+  .filter a[aria-current='page'] {
+    background-color: var(--color-accent);
+    border-color: var(--color-accent);
+    color: var(--color-accent-contrast);
+    font-weight: var(--weight-medium);
+  }
+
+  .count {
+    font-size: var(--text-2xs);
+    font-variant-numeric: tabular-nums;
+    opacity: 0.75;
+  }
+
+  .status {
+    color: var(--color-text-subtle);
+    font-size: var(--text-xs);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+    gap: var(--space-sm);
+    list-style: none;
+    padding: 0;
+  }
+
+  /* `hidden` must beat `display: grid`/`flex` on the item. */
+  .grid li[hidden] {
+    display: none;
+  }
+
+  .empty {
+    padding-block: var(--space-lg);
+    color: var(--color-text-muted);
+  }
+
+  .empty[hidden] {
+    display: none;
+  }
+</style>

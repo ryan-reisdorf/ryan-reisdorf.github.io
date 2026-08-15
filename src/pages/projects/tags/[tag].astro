@@ -1,0 +1,68 @@
+---
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ProjectBrowser from '../../../components/ProjectBrowser.astro';
+import { getProjects, getTags, tagSlug } from '../../../lib/projects';
+
+/**
+ * One static page per tag. These are the no-JS destinations behind the filter
+ * chips, and they double as shareable URLs for the enhanced client-side filter.
+ */
+export const getStaticPaths: GetStaticPaths = async () => {
+  const tags = await getTags();
+  return tags.map(({ tag }) => ({
+    params: { tag: tagSlug(tag) },
+    props: { tag },
+  }));
+};
+
+interface Props {
+  tag: string;
+}
+
+const { tag } = Astro.props;
+
+// The browser receives the FULL project set on every tag page and hides the
+// non-matching ones — see the contract comment in ProjectBrowser.astro.
+const projects = await getProjects();
+const tags = await getTags();
+const matchCount = projects.filter((p) => p.data.tags.includes(tag)).length;
+---
+
+<BaseLayout
+  title={`Projects tagged “${tag}”`}
+  description={`${matchCount} project${matchCount === 1 ? '' : 's'} tagged ${tag}.`}
+>
+  <div class="container">
+    <header class="page-head">
+      <p class="eyebrow">Filtered by tag</p>
+      <h1>{tag}</h1>
+      <p class="lede">
+        <a href="/projects">← All projects</a>
+      </p>
+    </header>
+
+    <ProjectBrowser projects={projects} tags={tags} activeTag={tag} />
+  </div>
+</BaseLayout>
+
+<style>
+  .page-head {
+    max-width: var(--measure);
+    margin-block-end: var(--space-lg);
+  }
+
+  h1 {
+    margin-block-start: var(--space-3xs);
+    font-size: var(--text-2xl);
+  }
+
+  .lede {
+    margin-block-start: var(--space-2xs);
+    font-size: var(--text-sm);
+  }
+
+  .lede a {
+    text-decoration: none;
+  }
+</style>

@@ -1,0 +1,41 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProjectBrowser from '../../components/ProjectBrowser.astro';
+import { getProjects, getTags } from '../../lib/projects';
+
+const projects = await getProjects();
+const tags = await getTags();
+---
+
+<BaseLayout
+  title="Projects"
+  description="Things I've built — test automation, monitoring tooling, and homelab infrastructure."
+>
+  <div class="container">
+    <header class="page-head">
+      <h1>Projects</h1>
+      <p>
+        Work I've built and maintained. Filter by tag — the filters are plain links, so they work
+        with JavaScript disabled too.
+      </p>
+    </header>
+
+    <ProjectBrowser projects={projects} tags={tags} activeTag={null} />
+  </div>
+</BaseLayout>
+
+<style>
+  .page-head {
+    max-width: var(--measure);
+    margin-block-end: var(--space-lg);
+  }
+
+  h1 {
+    font-size: var(--text-2xl);
+  }
+
+  p {
+    margin-block-start: var(--space-2xs);
+    color: var(--color-text-muted);
+  }
+</style>

@@ -1,0 +1,67 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+/*
+ * GitHub Pages serves /404.html automatically for unmatched paths on both
+ * apex and project sites — no config needed beyond this file existing.
+ */
+---
+
+<BaseLayout
+  title="Page not found"
+  description="That page doesn't exist."
+  noindex
+>
+  <div class="container container--narrow">
+    <div class="panel">
+      <p class="code">404</p>
+      <h1>That page doesn't exist.</h1>
+      <p class="body">
+        The link is probably stale, or I moved something. Nothing here is monitored, which is
+        ironic given the day job.
+      </p>
+
+      <ul class="options">
+        <li><a href="/">Home</a></li>
+        <li><a href="/projects">Projects</a></li>
+        <li><a href="/resume">Résumé</a></li>
+        <li><a href="/links">Links</a></li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .panel {
+    padding-block: var(--space-2xl);
+  }
+
+  .code {
+    font-family: var(--font-mono);
+    font-size: var(--text-3xl);
+    font-weight: var(--weight-bold);
+    line-height: var(--leading-none);
+    color: var(--color-accent);
+  }
+
+  h1 {
+    margin-block-start: var(--space-sm);
+    font-size: var(--text-xl);
+  }
+
+  .body {
+    margin-block-start: var(--space-2xs);
+    max-width: var(--measure);
+    color: var(--color-text-muted);
+  }
+
+  .options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-block-start: var(--space-lg);
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+  }
+</style>

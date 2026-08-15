@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="RR monogram">
+  <!-- Placeholder monogram. Colors are inlined because a favicon is an
+       independent document and cannot read tokens.css. If you reskin the site,
+       update these two values to match --color-bg and --color-accent. -->
+  <rect width="32" height="32" rx="7" fill="#0a0c0f" />
+  <path
+    d="M9 23V9h6.2c2.6 0 4.3 1.5 4.3 3.9 0 1.9-1.1 3.2-2.9 3.6L20.6 23h-3l-3.4-6h-2.4v6H9zm2.8-8.4h3c1.2 0 2-.7 2-1.8s-.8-1.7-2-1.7h-3v3.5z"
+    fill="#6fd3c7"
+  />
+</svg>

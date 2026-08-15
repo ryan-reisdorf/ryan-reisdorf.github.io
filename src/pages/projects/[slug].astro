@@ -1,0 +1,238 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { render } from 'astro:content';
+import { Image } from 'astro:assets';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getProjects, tagSlug, type Project } from '../../lib/projects';
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const projects = await getProjects();
+  return projects.map((project) => ({
+    params: { slug: project.id },
+    props: { project },
+  }));
+};
+
+interface Props {
+  project: Project;
+}
+
+const { project } = Astro.props;
+const { title, summary, tags, role, stack, year, repo, cover, coverAlt, draft } = project.data;
+
+const { Content, headings } = await render(project);
+const hasToc = headings.filter((h) => h.depth === 2).length > 2;
+---
+
+<BaseLayout
+  title={title}
+  description={summary}
+  ogType="article"
+  noindex={draft}
+  publishedDate={`${year}-01-01`}
+>
+  <article class="container container--narrow">
+    <header class="head">
+      <p class="breadcrumb">
+        <a href="/projects">← Projects</a>
+      </p>
+
+      <h1>{title}</h1>
+      <p class="summary">{summary}</p>
+
+      {draft && <p class="draft-notice">Draft — visible in local dev only.</p>}
+
+      <dl class="facts">
+        <div>
+          <dt>Role</dt>
+          <dd>{role}</dd>
+        </div>
+        <div>
+          <dt>Year</dt>
+          <dd>{year}</dd>
+        </div>
+        {
+          stack.length > 0 && (
+            <div>
+              <dt>Stack</dt>
+              <dd>{stack.join(', ')}</dd>
+            </div>
+          )
+        }
+        {
+          repo && (
+            <div>
+              <dt>Source</dt>
+              <dd>
+                <a href={repo} rel="noopener">
+                  {repo.replace(/^https?:\/\//, '')}
+                </a>
+              </dd>
+            </div>
+          )
+        }
+      </dl>
+
+      {
+        tags.length > 0 && (
+          <ul class="tags" aria-label="Tags">
+            {tags.map((tag) => (
+              <li>
+                <a href={`/projects/tags/${tagSlug(tag)}`}>{tag}</a>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </header>
+
+    {
+      cover && (
+        <Image
+          class="cover"
+          src={cover}
+          alt={coverAlt ?? ''}
+          widths={[600, 1200]}
+          sizes="(min-width: 46rem) 46rem, 100vw"
+          loading="eager"
+          fetchpriority="high"
+        />
+      )
+    }
+
+    {
+      hasToc && (
+        <nav class="toc" aria-labelledby="toc-heading">
+          <h2 id="toc-heading">On this page</h2>
+          <ul>
+            {headings
+              .filter((h) => h.depth === 2)
+              .map((heading) => (
+                <li>
+                  <a href={`#${heading.slug}`}>{heading.text}</a>
+                </li>
+              ))}
+          </ul>
+        </nav>
+      )
+    }
+
+    <div class="prose">
+      <Content />
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .head {
+    padding-block-end: var(--space-md);
+    margin-block-end: var(--space-lg);
+    border-block-end: var(--border);
+  }
+
+  .breadcrumb {
+    font-size: var(--text-sm);
+  }
+
+  .breadcrumb a {
+    text-decoration: none;
+  }
+
+  h1 {
+    margin-block-start: var(--space-xs);
+    font-size: var(--text-2xl);
+  }
+
+  .summary {
+    margin-block-start: var(--space-2xs);
+    max-width: var(--measure);
+    color: var(--color-text-muted);
+    font-size: var(--text-md);
+  }
+
+  .draft-notice {
+    margin-block-start: var(--space-sm);
+    padding: var(--space-2xs) var(--space-xs);
+    background-color: var(--color-accent-wash);
+    border-radius: var(--radius-md);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+    gap: var(--space-xs);
+    margin-block-start: var(--space-md);
+  }
+
+  dt {
+    color: var(--color-text-subtle);
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+  }
+
+  dd {
+    margin: 0;
+    margin-block-start: var(--space-3xs);
+    font-size: var(--text-sm);
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3xs);
+    margin-block-start: var(--space-md);
+    list-style: none;
+    padding: 0;
+  }
+
+  .tags a {
+    display: inline-block;
+    padding: var(--space-3xs) var(--space-2xs);
+    background-color: var(--color-accent-wash);
+    border-radius: var(--radius-full);
+    color: var(--color-text-muted);
+    font-size: var(--text-2xs);
+    text-decoration: none;
+  }
+
+  .tags a:hover {
+    color: var(--color-text);
+  }
+
+  .cover {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border: var(--border);
+    border-radius: var(--radius-lg);
+    margin-block-end: var(--space-lg);
+  }
+
+  .toc {
+    padding: var(--space-sm);
+    margin-block-end: var(--space-lg);
+    background-color: var(--color-surface-sunken);
+    border: var(--border);
+    border-radius: var(--radius-md);
+  }
+
+  .toc h2 {
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    color: var(--color-text-subtle);
+  }
+
+  .toc ul {
+    margin-block-start: var(--space-2xs);
+    padding-inline-start: var(--space-sm);
+    font-size: var(--text-sm);
+  }
+
+  .toc li + li {
+    margin-block-start: var(--space-3xs);
+  }
+</style>
