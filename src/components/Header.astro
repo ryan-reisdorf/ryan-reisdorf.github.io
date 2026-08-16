@@ -3,7 +3,6 @@ import { site, navigation } from '../data/site';
 
 const path = Astro.url.pathname;
 
-/** A nav item is current if it matches exactly or is a parent of the URL. */
 function isCurrent(href: string): boolean {
   if (href === '/') return path === '/';
   return path === href || path.startsWith(`${href}/`);
@@ -12,14 +11,21 @@ function isCurrent(href: string): boolean {
 
 <header>
   <div class="container bar">
-    <a class="wordmark" href="/">{site.title}</a>
+    <a class="wordmark" href="/">
+      <span class="status-dot" aria-hidden="true"></span>
+      <span class="name">{site.title}</span>
+      <span class="sig" aria-hidden="true">//</span>
+    </a>
 
     <nav aria-label="Main">
       <ul>
         {
-          navigation.map((item) => (
+          navigation.map((item, i) => (
             <li>
               <a href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined}>
+                <span class="idx" aria-hidden="true">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
                 {item.label}
               </a>
             </li>
@@ -35,8 +41,8 @@ function isCurrent(href: string): boolean {
     position: sticky;
     top: 0;
     z-index: var(--z-header);
-    background-color: color-mix(in srgb, var(--color-bg) 88%, transparent);
-    backdrop-filter: blur(8px);
+    background-color: color-mix(in srgb, var(--color-bg) 82%, transparent);
+    backdrop-filter: blur(10px);
     border-block-end: var(--border);
   }
 
@@ -51,14 +57,24 @@ function isCurrent(href: string): boolean {
   }
 
   .wordmark {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
     font-weight: var(--weight-semibold);
-    font-size: var(--text-md);
-    letter-spacing: var(--tracking-tight);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
     color: var(--color-text);
     text-decoration: none;
   }
 
-  .wordmark:hover {
+  .wordmark:hover .name {
+    color: var(--color-accent);
+    text-shadow: var(--glow-text);
+  }
+
+  .sig {
     color: var(--color-accent);
   }
 
@@ -66,28 +82,43 @@ function isCurrent(href: string): boolean {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-sm);
+    gap: var(--space-xs);
     list-style: none;
     padding: 0;
   }
 
   nav a {
-    display: inline-block;
-    padding-block: var(--space-3xs);
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--space-3xs);
+    padding: var(--space-3xs) var(--space-2xs);
+    font-family: var(--font-display);
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
     color: var(--color-text-muted);
-    font-size: var(--text-sm);
     text-decoration: none;
+    border: var(--border-width) solid transparent;
+  }
+
+  .idx {
+    font-size: var(--text-2xs);
+    color: var(--color-text-subtle);
   }
 
   nav a:hover {
     color: var(--color-text);
+    border-color: var(--color-border);
   }
 
-  /* The current page is marked semantically first; the underline is the
-     visual echo of aria-current, not a separate class. */
+  /* aria-current is the source of truth; the lit border is its visual echo. */
   nav a[aria-current='page'] {
-    color: var(--color-text);
-    font-weight: var(--weight-medium);
-    box-shadow: inset 0 calc(-1 * var(--border-width-thick)) 0 0 var(--color-accent);
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+    background-color: var(--color-accent-wash);
+  }
+
+  nav a[aria-current='page'] .idx {
+    color: var(--color-accent);
   }
 </style>

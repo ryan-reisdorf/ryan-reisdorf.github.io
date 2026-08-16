@@ -35,10 +35,13 @@ const matchCount = projects.filter((p) => p.data.tags.includes(tag)).length;
 >
   <div class="container">
     <header class="page-head">
-      <p class="eyebrow">Filtered by tag</p>
+      <p class="eyebrow">
+        Filtered by tag<span class="jp" lang="ja" aria-hidden="true">タグ</span>
+      </p>
       <h1>{tag}</h1>
+      <hr class="rule" />
       <p class="lede">
-        <a href="/projects">← All projects</a>
+        <a href="/projects"><span aria-hidden="true">←</span> All projects</a>
       </p>
     </header>
 
@@ -57,9 +60,15 @@ const matchCount = projects.filter((p) => p.data.tags.includes(tag)).length;
     font-size: var(--text-2xl);
   }
 
+  .rule {
+    margin-block: var(--space-md);
+  }
+
   .lede {
-    margin-block-start: var(--space-2xs);
-    font-size: var(--text-sm);
+    font-family: var(--font-display);
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
   }
 
   .lede a {

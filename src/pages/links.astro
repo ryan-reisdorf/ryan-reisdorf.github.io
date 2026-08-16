@@ -12,7 +12,11 @@ const isExternal = (href: string) => /^https?:\/\//.test(href);
 >
   <div class="container container--narrow">
     <header class="page-head">
+      <p class="eyebrow">
+        Uplink<span class="jp" lang="ja" aria-hidden="true">接続</span>
+      </p>
       <h1>Links</h1>
+      <hr class="rule" />
       <p>Everywhere I actually exist online.</p>
     </header>
 
@@ -44,11 +48,15 @@ const isExternal = (href: string) => /^https?:\/\//.test(href);
   }
 
   h1 {
+    margin-block-start: var(--space-3xs);
     font-size: var(--text-2xl);
   }
 
-  .page-head p {
-    margin-block-start: var(--space-2xs);
+  .rule {
+    margin-block: var(--space-md);
+  }
+
+  .page-head p:not(.eyebrow) {
     color: var(--color-text-muted);
   }
 
@@ -67,24 +75,25 @@ const isExternal = (href: string) => /^https?:\/\//.test(href);
     padding: var(--space-sm);
     background-color: var(--color-surface);
     border: var(--border);
-    border-radius: var(--radius-md);
     text-decoration: none;
-    transition:
-      border-color var(--duration-fast) var(--ease),
-      background-color var(--duration-fast) var(--ease);
+    transition: var(--transition-colors);
   }
 
   .hub a:hover {
     background-color: var(--color-surface-raised);
-    border-color: var(--color-border-strong);
+    border-color: var(--color-accent);
+    box-shadow: var(--glow-accent-soft);
   }
 
   .label {
     display: flex;
     align-items: center;
-    gap: var(--space-3xs);
+    gap: var(--space-2xs);
     color: var(--color-text);
-    font-weight: var(--weight-medium);
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
   }
 
   .hub a:hover .label {

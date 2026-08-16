@@ -4,27 +4,27 @@ import type { Project } from '../lib/projects';
 
 interface Props {
   project: Project;
-  /** Renders the title as <h2> (default) or <h3> when nested under a section heading. */
   headingLevel?: 2 | 3;
+  /** Zero-based position, rendered as a technical record number (001, 002…). */
+  index?: number;
 }
 
-const { project, headingLevel = 2 } = Astro.props;
+const { project, headingLevel = 2, index } = Astro.props;
 const { title, summary, tags, year, stack, cover, coverAlt, draft } = project.data;
 const Heading = `h${headingLevel}` as 'h2' | 'h3';
 const href = `/projects/${project.id}`;
+const recordNo = index === undefined ? null : String(index + 1).padStart(3, '0');
 ---
 
-<article class="card" data-tags={tags.join(' ')}>
+<article class="card bracketed">
   {
     cover && (
-      /* widths + sizes emit a srcset; the intrinsic dimensions Astro writes
-         onto the tag are what hold the space and keep CLS at zero. */
       <Image
         class="cover"
         src={cover}
         alt={coverAlt ?? ''}
         widths={[400, 800]}
-        sizes="(min-width: 46rem) 24rem, 100vw"
+        sizes="(min-width: 48rem) 24rem, 100vw"
         loading="lazy"
         decoding="async"
       />
@@ -33,61 +33,60 @@ const href = `/projects/${project.id}`;
 
   <div class="body">
     <p class="meta">
-      <span>{year}</span>
+      {recordNo && <span class="rec">REC {recordNo}</span>}
+      <span class="year">{year}</span>
       {draft && <span class="badge">Draft</span>}
     </p>
 
     <Heading class="title">
-      {/* Stretched-link pattern: one real link, whole card clickable, and the
-          accessible name stays exactly the project title. */}
       <a href={href}>{title}</a>
     </Heading>
 
     <p class="summary">{summary}</p>
 
-    {
-      stack.length > 0 && (
-        <p class="stack">
-          <span class="visually-hidden">Built with: </span>
-          {stack.join(' · ')}
-        </p>
-      )
-    }
+    <div class="foot">
+      {
+        stack.length > 0 && (
+          <p class="stack">
+            <span class="visually-hidden">Built with: </span>
+            {stack.join(' / ')}
+          </p>
+        )
+      }
 
-    {
-      tags.length > 0 && (
-        <ul class="tags" aria-label="Tags">
-          {tags.map((tag) => (
-            <li>{tag}</li>
-          ))}
-        </ul>
-      )
-    }
+      {
+        tags.length > 0 && (
+          <ul class="tags" aria-label="Tags">
+            {tags.slice(0, 4).map((tag) => (
+              <li>{tag}</li>
+            ))}
+          </ul>
+        )
+      }
+    </div>
   </div>
 </article>
 
 <style>
   .card {
-    position: relative;
     display: flex;
     flex-direction: column;
+    height: 100%;
     background-color: var(--color-surface);
     border: var(--border);
-    border-radius: var(--radius-lg);
-    overflow: hidden;
     transition:
       border-color var(--duration-base) var(--ease),
-      transform var(--duration-base) var(--ease),
+      background-color var(--duration-base) var(--ease),
       box-shadow var(--duration-base) var(--ease);
   }
 
-  .card:hover {
-    border-color: var(--color-border-strong);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+  .card:hover,
+  .card:focus-within {
+    border-color: var(--color-accent);
+    background-color: var(--color-surface-raised);
+    box-shadow: var(--glow-accent-soft);
   }
 
-  /* Focus lands on the inner <a>, but the ring should read as "the card". */
   .card:focus-within {
     outline: var(--focus-ring);
     outline-offset: var(--focus-ring-offset);
@@ -95,12 +94,6 @@ const href = `/projects/${project.id}`;
 
   .card:focus-within .title a:focus-visible {
     outline: none;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .card:hover {
-      transform: none;
-    }
   }
 
   .cover {
@@ -112,6 +105,7 @@ const href = `/projects/${project.id}`;
 
   .body {
     display: flex;
+    flex: 1;
     flex-direction: column;
     gap: var(--space-2xs);
     padding: var(--space-sm);
@@ -121,23 +115,33 @@ const href = `/projects/${project.id}`;
     display: flex;
     align-items: center;
     gap: var(--space-2xs);
+    font-family: var(--font-display);
     font-size: var(--text-2xs);
-    font-variant-numeric: tabular-nums;
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
     color: var(--color-text-subtle);
   }
 
+  .rec {
+    color: var(--color-accent);
+  }
+
+  .year {
+    font-variant-numeric: tabular-nums;
+  }
+
   .badge {
+    margin-inline-start: auto;
     padding: 0 var(--space-3xs);
-    border: var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--color-text-muted);
+    border: var(--border-width) solid var(--color-accent-2);
+    background-color: var(--color-accent-2-wash);
+    color: var(--color-accent-2);
   }
 
   .title {
     font-size: var(--text-lg);
     line-height: var(--leading-snug);
+    letter-spacing: var(--tracking-normal);
   }
 
   .title a {
@@ -145,8 +149,7 @@ const href = `/projects/${project.id}`;
     text-decoration: none;
   }
 
-  /* Expands the link's hit area to the whole card without nesting anything
-     inside the anchor. */
+  /* Stretched link — whole card clickable, accessible name stays the title. */
   .title a::after {
     content: '';
     position: absolute;
@@ -162,6 +165,14 @@ const href = `/projects/${project.id}`;
     font-size: var(--text-sm);
   }
 
+  .foot {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+    margin-block-start: auto;
+    padding-block-start: var(--space-xs);
+  }
+
   .stack {
     color: var(--color-text-subtle);
     font-family: var(--font-mono);
@@ -172,17 +183,17 @@ const href = `/projects/${project.id}`;
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-3xs);
-    margin-block-start: var(--space-3xs);
     list-style: none;
     padding: 0;
   }
 
   .tags li {
     padding: var(--space-3xs) var(--space-2xs);
-    background-color: var(--color-accent-wash);
-    border-radius: var(--radius-full);
+    border: var(--border);
     color: var(--color-text-muted);
+    font-family: var(--font-display);
     font-size: var(--text-2xs);
     line-height: var(--leading-none);
+    letter-spacing: var(--tracking-wide);
   }
 </style>

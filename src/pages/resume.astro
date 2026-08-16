@@ -13,6 +13,10 @@ const { name, headline, location, summary, experience, education, skills, certif
 <BaseLayout title="Résumé" description={`${name} — ${headline}`}>
   <div class="container container--narrow">
     <header class="head">
+      <p class="eyebrow">
+        <span class="status-dot" aria-hidden="true"></span>
+        Personnel file<span class="jp" lang="ja" aria-hidden="true">履歴書</span>
+      </p>
       <h1>{name}</h1>
       <p class="headline">{headline}</p>
       <p class="location">{location}</p>
@@ -124,19 +128,25 @@ const { name, headline, location, summary, experience, education, skills, certif
   }
 
   h1 {
+    margin-block-start: var(--space-3xs);
     font-size: var(--text-2xl);
   }
 
   .headline {
     margin-block-start: var(--space-3xs);
-    color: var(--color-text-muted);
-    font-size: var(--text-md);
+    color: var(--color-accent);
+    font-family: var(--font-display);
+    font-size: var(--text-sm);
+    letter-spacing: var(--tracking-wide);
   }
 
   .location {
     margin-block-start: var(--space-3xs);
     color: var(--color-text-subtle);
-    font-size: var(--text-sm);
+    font-family: var(--font-display);
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
   }
 
   .actions {
@@ -147,11 +157,14 @@ const { name, headline, location, summary, experience, education, skills, certif
     display: inline-block;
     padding: var(--space-2xs) var(--space-sm);
     background-color: var(--color-accent);
-    border-radius: var(--radius-md);
+    border: var(--border-width) solid var(--color-accent);
     color: var(--color-accent-contrast);
-    font-size: var(--text-sm);
-    font-weight: var(--weight-medium);
+    font-family: var(--font-display);
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
     text-decoration: none;
+    box-shadow: var(--glow-accent);
   }
 
   .download:hover {
@@ -164,6 +177,9 @@ const { name, headline, location, summary, experience, education, skills, certif
   }
 
   h2 {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2xs);
     padding-block-end: var(--space-3xs);
     margin-block-end: var(--space-sm);
     border-block-end: var(--border);
@@ -171,6 +187,14 @@ const { name, headline, location, summary, experience, education, skills, certif
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
     color: var(--color-text-subtle);
+  }
+
+  h2::before {
+    content: '';
+    width: var(--space-xs);
+    height: var(--border-width-thick);
+    background-color: var(--color-accent);
+    box-shadow: var(--glow-accent);
   }
 
   .summary {
@@ -194,6 +218,7 @@ const { name, headline, location, summary, experience, education, skills, certif
   h3 {
     font-size: var(--text-base);
     font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-normal);
   }
 
   .at {
@@ -241,8 +266,10 @@ const { name, headline, location, summary, experience, education, skills, certif
 
   .skills dt {
     color: var(--color-text);
-    font-size: var(--text-sm);
-    font-weight: var(--weight-semibold);
+    font-family: var(--font-display);
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
   }
 
   .skills dd {
@@ -264,8 +291,13 @@ const { name, headline, location, summary, experience, education, skills, certif
 
   .updated {
     margin-block-start: var(--space-xl);
+    padding-block-start: var(--space-2xs);
+    border-block-start: var(--border);
     color: var(--color-text-subtle);
-    font-size: var(--text-xs);
+    font-family: var(--font-display);
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
   }
 
   /* Print: strip chrome so Ctrl-P from this page produces the PDF.

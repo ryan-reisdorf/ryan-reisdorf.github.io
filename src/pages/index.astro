@@ -10,45 +10,60 @@ const featured = await getFeaturedProjects(3);
 <BaseLayout title={site.title} isHome>
   <div class="container">
     <section class="hero" aria-labelledby="hero-heading">
-      <p class="eyebrow">{site.tagline}</p>
+      <p class="eyebrow">
+        <span class="status-dot" aria-hidden="true"></span>
+        {site.tagline}
+        <span class="jp" lang="ja" aria-hidden="true">品質保証</span>
+      </p>
+
       <h1 id="hero-heading">
-        I'm Ryan — I break software on purpose, then build the tools that keep it broken-proof.
-        {/* TODO: rewrite this in your own voice. One or two lines, no buzzwords. */}
+        {/* TODO: rewrite in your own voice. Two short lines, no buzzwords.
+            The <em> is the one place the magenta accent appears on this page. */}
+        I break software on purpose,<br />
+        then build the tools that <em>keep it honest</em>.
       </h1>
+
+      <hr class="rule" />
 
       <div class="bio">
         <p>
-          {/* TODO: replace with your own bio. Keep the shape: what you do now, what
-              you're studying, what you do for fun. Two short paragraphs is plenty. */}
-          I'm a QA engineer at <strong>Nagios</strong>, where I work on test automation and build
-          custom dashlets for Nagios XI. Most of what I enjoy sits at the seam between testing and
-          tooling — the harness, the fixture, the dashboard that finally makes a failure obvious.
+          {/* TODO: replace with your own bio. Keep the shape: what you do now,
+              what you're studying, what you do for fun. */}
+          QA engineer at <strong>Nagios</strong> — test automation and custom dashlets for Nagios
+          XI. The work I like sits at the seam between testing and tooling: the harness, the
+          fixture, the dashboard that finally makes a failure obvious at a glance.
         </p>
         <p>
-          Outside work I run <strong>Erebus Station</strong>, a homelab that doubles as a testbed for
-          everything I'm learning in my cybersecurity master's. It is occasionally on fire, which is
-          the point.
+          Off the clock I run <strong>Erebus Station</strong>, a homelab that doubles as a testbed
+          for a cybersecurity master's. It is occasionally on fire. That is the point.
         </p>
       </div>
 
       <div class="actions">
-        <a class="button button--primary" href="/projects">View projects</a>
+        <a class="button button--primary" href="/projects">
+          View projects <span aria-hidden="true">→</span>
+        </a>
         <a class="button" href="/resume">Résumé</a>
       </div>
     </section>
 
     <section class="featured" aria-labelledby="featured-heading">
       <div class="section-head">
-        <h2 id="featured-heading">Selected work</h2>
-        <a class="see-all" href="/projects">All projects →</a>
+        <div>
+          <p class="eyebrow">
+            Index<span class="jp" lang="ja" aria-hidden="true">実績</span>
+          </p>
+          <h2 id="featured-heading">Selected work</h2>
+        </div>
+        <a class="see-all" href="/projects">All projects <span aria-hidden="true">→</span></a>
       </div>
 
       {
         featured.length > 0 ? (
           <ul class="grid">
-            {featured.map((project) => (
+            {featured.map((project, i) => (
               <li>
-                <ProjectCard project={project} headingLevel={3} />
+                <ProjectCard project={project} headingLevel={3} index={i} />
               </li>
             ))}
           </ul>
@@ -63,19 +78,29 @@ const featured = await getFeaturedProjects(3);
 <style>
   .hero {
     max-width: var(--container-narrow);
-    padding-block: var(--space-lg) var(--space-2xl);
+    padding-block: var(--space-xl) var(--space-2xl);
   }
 
   h1 {
-    margin-block-start: var(--space-2xs);
-    font-size: var(--text-2xl);
+    margin-block-start: var(--space-sm);
+    font-size: var(--text-3xl);
+    letter-spacing: var(--tracking-tight);
+  }
+
+  h1 em {
+    font-style: normal;
+    color: var(--color-accent);
+    text-shadow: var(--glow-text);
+  }
+
+  .rule {
+    margin-block: var(--space-lg);
   }
 
   .bio {
     display: flex;
     flex-direction: column;
-    gap: var(--space-xs);
-    margin-block-start: var(--space-md);
+    gap: var(--space-sm);
     max-width: var(--measure);
     color: var(--color-text-muted);
     font-size: var(--text-md);
@@ -91,31 +116,35 @@ const featured = await getFeaturedProjects(3);
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2xs);
-    margin-block-start: var(--space-lg);
+    margin-block-start: var(--space-xl);
   }
 
   .button {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2xs);
     padding: var(--space-2xs) var(--space-sm);
-    background-color: var(--color-surface);
-    border: var(--border);
-    border-radius: var(--radius-md);
+    border: var(--border-width) solid var(--color-border-strong);
     color: var(--color-text);
-    font-size: var(--text-sm);
-    font-weight: var(--weight-medium);
+    font-family: var(--font-display);
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
     text-decoration: none;
     transition: var(--transition-colors);
   }
 
   .button:hover {
-    border-color: var(--color-border-strong);
-    color: var(--color-text);
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    box-shadow: var(--glow-accent-soft);
   }
 
   .button--primary {
     background-color: var(--color-accent);
     border-color: var(--color-accent);
     color: var(--color-accent-contrast);
+    box-shadow: var(--glow-accent);
   }
 
   .button--primary:hover {
@@ -127,26 +156,30 @@ const featured = await getFeaturedProjects(3);
   .section-head {
     display: flex;
     flex-wrap: wrap;
-    align-items: baseline;
+    align-items: flex-end;
     justify-content: space-between;
     gap: var(--space-2xs) var(--space-sm);
-    margin-block-end: var(--space-sm);
+    margin-block-end: var(--space-md);
     padding-block-end: var(--space-2xs);
     border-block-end: var(--border);
   }
 
   h2 {
+    margin-block-start: var(--space-3xs);
     font-size: var(--text-xl);
   }
 
   .see-all {
-    font-size: var(--text-sm);
+    font-family: var(--font-display);
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
     text-decoration: none;
   }
 
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 21rem), 1fr));
     gap: var(--space-sm);
     list-style: none;
     padding: 0;

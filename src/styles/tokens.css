@@ -2,107 +2,124 @@
    tokens.css — THE ONLY FILE IN THIS PROJECT THAT CONTAINS LITERAL VALUES.
    =========================================================================
 
+   THEME: "CONSOLE"
+   ----------------
+   Three influences, in descending order of weight:
+
+     1. Anduril — the structure. Near-black ground, hairline rules, square
+        corners, uppercase micro-labels with wide tracking, dense technical
+        metadata, generous negative space. Serious instrument, not brochure.
+     2. Neo-retro — the texture. Monospace display type, CRT scanlines, a
+        faint phosphor grid, terminal-style framing and corner brackets.
+     3. Cyber Tokyo — the seasoning, used sparingly. Phosphor cyan as the
+        primary signal, hot magenta as a rare second accent, soft glow on
+        live elements only.
+
    Rules of the road (enforced by `pnpm run lint:tokens`):
      - No component, layout, or page may contain a literal hex/rgb/hsl color,
        a px font-size, or a font-family stack. They reference var(--…) only.
-     - Everything below is defined ONCE. There is no second palette block to
-       keep in sync.
+     - Everything below is defined ONCE. There is no second palette block.
 
    HOW THEMING WORKS
    -----------------
-   Every themed value is declared with the CSS `light-dark()` function, which
-   resolves against the element's *used* `color-scheme`. That means switching
-   the entire theme is a single `color-scheme` declaration — not a second copy
-   of the palette.
+   Every themed value uses the CSS `light-dark()` function, which resolves
+   against the element's used `color-scheme`. Switching the whole theme is a
+   single `color-scheme` declaration, not a duplicated palette.
 
-     - Default             → dark   (`color-scheme: dark` on :root)
-     - OS prefers light    → light  (unless [data-theme="dark"] forces dark)
+     - Default             → dark   ("console")
+     - OS prefers light    → light  ("daylight", unless [data-theme="dark"])
      - [data-theme="light"]→ light
      - [data-theme="dark"] → dark
 
-   ADDING A THIRD THEME (e.g. a high-contrast or LCARS skin) — no component
-   changes required, just append a block at the bottom of this file:
-
-     :root[data-theme="lcars"] {
-       color-scheme: dark;
-       --color-accent: #ff9900;
-       --color-bg: #000000;
-       --font-sans: "Antonio", var(--font-fallback-sans);
-     }
-
-   Override only the SEMANTIC tokens (Layer 2). Components never read Layer 1.
+   The dark theme is the design. The light theme is a legible daylight
+   variant of the same structure — glow and scanlines resolve to zero there
+   rather than being faked in reverse.
    ========================================================================= */
 
 :root {
-  /* Dark is the default identity of the site. The @media block further down
-     hands control to the OS only when the user actually prefers light. */
   color-scheme: dark;
 
   /* =======================================================================
      LAYER 1 — PRIMITIVES
-     Raw values. Components must NEVER reference these directly; they exist
-     so the semantic layer below has a vocabulary to point at. Re-skinning
-     usually means editing Layer 1; restructuring means editing Layer 2.
+     Raw values. Components must NEVER reference these directly.
      ===================================================================== */
 
-  /* -- Neutral ramp ---------------------------------------------------- */
-  --gray-0: #ffffff;
-  --gray-25: #fbfbfa;
-  --gray-50: #f4f5f6;
-  --gray-100: #e9ebee;
-  --gray-200: #d7dbe0;
-  --gray-300: #b6bcc6;
-  --gray-400: #8b94a1;
-  --gray-450: #7b8593;
-  --gray-500: #6b7482;
-  --gray-600: #4d5563;
-  --gray-700: #333a45;
-  --gray-750: #262c35;
-  --gray-800: #1b2028;
-  --gray-850: #14181e;
-  --gray-900: #0f1216;
-  --gray-950: #0a0c0f;
+  /* -- Ink ramp (cool, near-black at the bottom) ------------------------ */
+  --ink-0: #ffffff;
+  --ink-25: #f7f6f2;
+  --ink-50: #eeece5;
+  --ink-100: #e2dfd6;
+  --ink-200: #cbc7ba;
+  --ink-300: #a8b1bd;
+  --ink-350: #9aa4b2;
+  --ink-400: #7d8896;
+  --ink-450: #6c7684;
+  --ink-500: #5c6773;
+  --ink-600: #3f4954;
+  --ink-700: #2a323c;
+  --ink-750: #1e2530;
+  --ink-800: #161c25;
+  --ink-850: #10151d;
+  --ink-900: #0a0e15;
+  --ink-950: #05070a;
 
-  /* -- Accent ramp (muted teal — restrained, reads as "instrument panel"
-        rather than "marketing site"). Swap these six values and the whole
-        site changes character. ------------------------------------------ */
-  --accent-100: #d3f2ed;
-  --accent-300: #9ae6dc;
-  --accent-400: #6fd3c7;
-  --accent-500: #3fada0;
-  --accent-600: #20726a;
-  --accent-700: #1a5a53;
+  /* -- Phosphor cyan — the primary signal colour ------------------------ */
+  --cyan-200: #b8fbf2;
+  --cyan-300: #7ff0e5;
+  --cyan-400: #45e3d4;
+  --cyan-500: #1fc4b4;
+  --cyan-600: #0f8d81;
+  --cyan-700: #0b6a61;
+  --cyan-800: #095650;
 
-  /* -- Support hues (used sparingly: focus ring, draft badge) ----------- */
-  --amber-300: #ffd166;
-  --amber-600: #a86e00;
+  /* -- Hot magenta — the rare second accent ----------------------------- */
+  --magenta-300: #ff9ac8;
+  --magenta-400: #ff5fa2;
+  --magenta-500: #e82f80;
+  --magenta-600: #b81a62;
+  --magenta-700: #8d1249;
+
+  /* -- Signal amber — focus ring and warnings --------------------------- */
+  --amber-300: #ffc65c;
+  --amber-600: #8a5a00;
 
   /* =======================================================================
      LAYER 2 — SEMANTIC TOKENS
-     This is the ONLY vocabulary components are allowed to use.
-     Each is defined once, for both themes, via light-dark().
+     The ONLY vocabulary components may use.
      ===================================================================== */
 
-  /* -- Surfaces & text ------------------------------------------------- */
-  --color-bg: light-dark(var(--gray-25), var(--gray-950));
-  --color-surface: light-dark(var(--gray-0), var(--gray-900));
-  --color-surface-raised: light-dark(var(--gray-0), var(--gray-850));
-  --color-surface-sunken: light-dark(var(--gray-50), var(--gray-900));
+  /* -- Surfaces & text -------------------------------------------------- */
+  --color-bg: light-dark(var(--ink-25), var(--ink-950));
+  --color-surface: light-dark(var(--ink-0), var(--ink-900));
+  --color-surface-raised: light-dark(var(--ink-0), var(--ink-850));
+  --color-surface-sunken: light-dark(var(--ink-50), var(--ink-900));
 
-  --color-text: light-dark(var(--gray-900), var(--gray-100));
-  --color-text-muted: light-dark(var(--gray-600), var(--gray-400));
-  --color-text-subtle: light-dark(var(--gray-500), var(--gray-450));
-  --color-text-inverted: light-dark(var(--gray-0), var(--gray-950));
+  --color-text: light-dark(var(--ink-850), var(--ink-100));
+  --color-text-muted: light-dark(var(--ink-600), var(--ink-350));
+  --color-text-subtle: light-dark(var(--ink-500), var(--ink-400));
+  --color-text-inverted: light-dark(var(--ink-0), var(--ink-950));
 
-  /* -- Accent ----------------------------------------------------------- */
-  --color-accent: light-dark(var(--accent-600), var(--accent-400));
-  --color-accent-hover: light-dark(var(--accent-700), var(--accent-300));
-  --color-accent-contrast: light-dark(var(--gray-0), var(--gray-950));
-  --color-accent-wash: light-dark(var(--accent-100), color-mix(in srgb, var(--accent-700) 22%, transparent));
+  /* -- Accent (primary signal) ------------------------------------------ */
+  --color-accent: light-dark(var(--cyan-700), var(--cyan-400));
+  /* Light hover goes DARKER (cyan-800), dark hover goes LIGHTER (cyan-300):
+     hover must always increase contrast against its own background. */
+  --color-accent-hover: light-dark(var(--cyan-800), var(--cyan-300));
+  --color-accent-contrast: light-dark(var(--ink-0), var(--ink-950));
+  --color-accent-wash: light-dark(
+    color-mix(in srgb, var(--cyan-400) 16%, transparent),
+    color-mix(in srgb, var(--cyan-700) 26%, transparent)
+  );
+
+  /* -- Accent 2 (used sparingly: draft flags, one hero detail) ---------- */
+  --color-accent-2: light-dark(var(--magenta-600), var(--magenta-400));
+  --color-accent-2-wash: light-dark(
+    color-mix(in srgb, var(--magenta-400) 14%, transparent),
+    color-mix(in srgb, var(--magenta-700) 30%, transparent)
+  );
 
   /* -- Lines & edges ---------------------------------------------------- */
-  --color-border: light-dark(var(--gray-200), var(--gray-750));
-  --color-border-strong: light-dark(var(--gray-300), var(--gray-700));
+  --color-border: light-dark(var(--ink-200), var(--ink-750));
+  --color-border-strong: light-dark(var(--ink-300), var(--ink-700));
   --color-focus: light-dark(var(--amber-600), var(--amber-300));
 
   /* -- Selection -------------------------------------------------------- */
@@ -110,29 +127,63 @@
   --color-selection-text: var(--color-text);
 
   /* =======================================================================
-     TYPOGRAPHY
-     System stacks only — zero network requests, zero font-swap layout shift.
-     To self-host a face later: add @font-face in global.css with
-     `font-display: swap` + a `size-adjust` matched to the fallback, then
-     prepend the family name to --font-sans here. Components stay untouched.
+     ATMOSPHERE — the CRT layer.
+     All three resolve to "off" in the light theme rather than inverting.
      ===================================================================== */
-  --font-fallback-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-fallback-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
 
-  --font-sans: var(--font-fallback-sans);
+  /* Fully-opaque stop for mask gradients. Not a palette colour — only its
+     alpha is ever used — but it lives here so the no-literals rule holds
+     without exceptions. */
+  --mask-opaque: #000000;
+
+  /* Faint phosphor grid behind everything. */
+  --grid-size: 44px;
+  --color-grid: light-dark(
+    color-mix(in srgb, var(--ink-600) 8%, transparent),
+    color-mix(in srgb, var(--cyan-400) 6%, transparent)
+  );
+
+  /* Scanlines, drawn over content. Kept near-invisible so they never eat
+     text contrast — this is texture, not a filter. */
+  --scanline-gap: 3px;
+  --color-scanline: light-dark(transparent, color-mix(in srgb, var(--ink-950) 55%, transparent));
+  --scanline-opacity: light-dark(0, 0.35);
+
+  /* Phosphor bloom. Strength is a token so light mode zeroes it out. */
+  --glow-strength: light-dark(0%, 42%);
+  --glow-strength-soft: light-dark(0%, 22%);
+  --glow-accent: 0 0 14px color-mix(in srgb, var(--color-accent) var(--glow-strength), transparent);
+  --glow-accent-soft: 0 0 24px
+    color-mix(in srgb, var(--color-accent) var(--glow-strength-soft), transparent);
+  --glow-accent-2: 0 0 14px
+    color-mix(in srgb, var(--color-accent-2) var(--glow-strength), transparent);
+  --glow-text: 0 0 12px color-mix(in srgb, var(--color-accent) var(--glow-strength), transparent);
+
+  /* =======================================================================
+     TYPOGRAPHY
+     System stacks only — zero network requests, zero font-swap shift.
+     --font-display is the monospace face doing the neo-retro work: every
+     heading, label, nav item, and metadata readout. --font-sans is reserved
+     for running prose, where a mono face would hurt readability.
+     ===================================================================== */
+  --font-fallback-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+  --font-fallback-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
+    'Liberation Mono', 'DejaVu Sans Mono', monospace;
+
+  --font-display: var(--font-fallback-mono);
   --font-mono: var(--font-fallback-mono);
+  --font-sans: var(--font-fallback-sans);
 
-  /* Fluid where it helps (headings), fixed where it must not move (body).
-     clamp() is viewport-driven, so it resolves before paint — no CLS. */
-  --text-2xs: 0.75rem;
-  --text-xs: 0.8125rem;
-  --text-sm: 0.9375rem;
+  --text-2xs: 0.6875rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
   --text-base: 1rem;
   --text-md: 1.0625rem;
-  --text-lg: 1.25rem;
-  --text-xl: clamp(1.45rem, 1.25rem + 0.9vw, 1.9rem);
-  --text-2xl: clamp(1.8rem, 1.45rem + 1.7vw, 2.6rem);
-  --text-3xl: clamp(2.2rem, 1.6rem + 2.8vw, 3.4rem);
+  --text-lg: 1.1875rem;
+  --text-xl: clamp(1.35rem, 1.15rem + 0.9vw, 1.75rem);
+  --text-2xl: clamp(1.7rem, 1.3rem + 1.9vw, 2.5rem);
+  --text-3xl: clamp(2.1rem, 1.4rem + 3.4vw, 3.75rem);
 
   --weight-normal: 400;
   --weight-medium: 500;
@@ -140,18 +191,20 @@
   --weight-bold: 700;
 
   --leading-none: 1;
-  --leading-tight: 1.2;
-  --leading-snug: 1.35;
+  --leading-tight: 1.08;
+  --leading-snug: 1.3;
   --leading-normal: 1.6;
   --leading-relaxed: 1.75;
 
-  --tracking-tight: -0.015em;
+  /* Wide tracking on micro-labels is the single most load-bearing detail
+     of this aesthetic. Headings go tight; labels go wide. */
+  --tracking-tight: -0.03em;
   --tracking-normal: 0;
-  --tracking-wide: 0.02em;
-  --tracking-caps: 0.08em;
+  --tracking-wide: 0.04em;
+  --tracking-caps: 0.18em;
 
   /* =======================================================================
-     SPACING — a single scale. Components pick a step, never a raw length.
+     SPACING
      ===================================================================== */
   --space-3xs: 0.25rem;
   --space-2xs: 0.5rem;
@@ -160,15 +213,17 @@
   --space-md: 1.5rem;
   --space-lg: 2rem;
   --space-xl: 3rem;
-  --space-2xl: 4rem;
-  --space-3xl: 6rem;
+  --space-2xl: 4.5rem;
+  --space-3xl: 7rem;
 
   /* =======================================================================
      RADII / BORDERS / SHADOWS
+     Square by default. Rounded corners read "consumer app" and fight
+     everything else here; the only curve is on pill counters.
      ===================================================================== */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 14px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
   --radius-full: 999px;
 
   --border-width: 1px;
@@ -177,34 +232,35 @@
   --border-strong: var(--border-width) solid var(--color-border-strong);
   --border-accent: var(--border-width-thick) solid var(--color-accent);
 
-  /* Shadows are barely-there in dark mode and soft in light mode; the
-     strength multiplier is itself a token so both stay in one place. */
+  /* Corner-bracket size for panel framing. */
+  --bracket-size: 10px;
+  --bracket-width: 1px;
+
   --shadow-color: light-dark(215 25% 35%, 0 0% 0%);
-  --shadow-strength: light-dark(0.10, 0.44);
+  --shadow-strength: light-dark(0.1, 0.55);
   --shadow-sm: 0 1px 2px hsl(var(--shadow-color) / var(--shadow-strength));
-  --shadow-md: 0 4px 12px -2px hsl(var(--shadow-color) / var(--shadow-strength));
-  --shadow-lg: 0 12px 32px -8px hsl(var(--shadow-color) / var(--shadow-strength));
+  --shadow-md: 0 4px 16px -4px hsl(var(--shadow-color) / var(--shadow-strength));
+  --shadow-lg: 0 16px 44px -12px hsl(var(--shadow-color) / var(--shadow-strength));
 
   /* =======================================================================
      LAYOUT
      ===================================================================== */
-  --container-max: 68rem;
-  --container-narrow: 46rem;
-  --measure: 68ch; /* comfortable reading width for prose */
-  --header-height: 4rem;
+  --container-max: 76rem;
+  --container-narrow: 48rem;
+  --measure: 70ch;
+  --header-height: 3.5rem;
 
   /* =======================================================================
-     MOTION — every duration routes through here so the reduced-motion block
-     in global.css can neutralise all of it in one place.
+     MOTION
      ===================================================================== */
-  --ease: cubic-bezier(0.4, 0, 0.2, 1);
-  --duration-fast: 120ms;
-  --duration-base: 220ms;
+  --ease: cubic-bezier(0.2, 0, 0.1, 1);
+  --duration-fast: 110ms;
+  --duration-base: 200ms;
+  --duration-slow: 420ms;
   --transition-colors: color var(--duration-fast) var(--ease),
     background-color var(--duration-fast) var(--ease),
-    border-color var(--duration-fast) var(--ease);
+    border-color var(--duration-fast) var(--ease), box-shadow var(--duration-fast) var(--ease);
 
-  /* -- Focus ring (one definition, used by every interactive element) --- */
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
   --focus-ring: var(--focus-ring-width) solid var(--color-focus);
@@ -212,25 +268,23 @@
   /* =======================================================================
      LAYERING
      ===================================================================== */
+  --z-grid: 0;
   --z-base: 1;
   --z-header: 100;
+  --z-scanlines: 150;
   --z-skip-link: 200;
 }
 
 /* =========================================================================
-   THEME SWITCHING — each rule is a single declaration. Because every token
-   above uses light-dark(), flipping `color-scheme` re-resolves ALL of them.
+   THEME SWITCHING — one declaration each; light-dark() re-resolves the rest.
    ========================================================================= */
 
-/* Honour an explicit OS light preference, unless the page forces dark. */
 @media (prefers-color-scheme: light) {
   :root:not([data-theme='dark']) {
     color-scheme: light;
   }
 }
 
-/* Explicit overrides win over the OS in both directions. Wire these to a
-   toggle button later (set data-theme on <html>) — see README. */
 :root[data-theme='light'] {
   color-scheme: light;
 }

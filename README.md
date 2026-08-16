@@ -3,6 +3,12 @@
 Personal portfolio. Astro + TypeScript, plain CSS, no UI framework, no Tailwind.
 Statically generated and deployed to GitHub Pages on every push to `main`.
 
+**Visual direction — "Console":** Anduril-style structure (near-black ground,
+hairline rules, square corners, uppercase micro-labels, dense technical
+metadata) with a neo-retro CRT texture (monospace display type, scanlines, a
+faint phosphor grid, corner brackets) and a pinch of cyber-Tokyo neon
+(phosphor cyan as the signal colour, hot magenta used sparingly).
+
 **Stack:** Astro 7 · TypeScript (strict) · pnpm · zero client JS except one 1.1 KB
 inlined script for tag filtering.
 
@@ -123,7 +129,7 @@ lint:tokens` fails the build if that erodes.
 Every themed value is declared once with the CSS `light-dark()` function:
 
 ```css
---color-bg: light-dark(var(--gray-25), var(--gray-950));
+--color-bg: light-dark(var(--ink-25), var(--ink-950));
 ```
 
 `light-dark()` resolves against the element's used `color-scheme`, so switching
@@ -142,14 +148,31 @@ There is no second palette block to keep in sync.
 
 The palette is two layers:
 
-- **Layer 1 — primitives.** Raw ramps (`--gray-*`, `--accent-*`). Components
-  never touch these.
+- **Layer 1 — primitives.** Raw ramps (`--ink-*`, `--cyan-*`, `--magenta-*`).
+  Components never touch these.
 - **Layer 2 — semantic.** `--color-bg`, `--color-text`, `--color-accent`, etc.
   This is the only vocabulary components use.
 
-Most reskins are a Layer 1 edit. To change the site's character, swap the six
-`--accent-*` values. To change type, edit `--font-sans` / `--font-mono` and the
-`--text-*` scale. Nothing else needs touching.
+Most reskins are a Layer 1 edit:
+
+| Want to change | Edit |
+| --- | --- |
+| The signal colour (drives links, focus, glow, brackets) | the six `--cyan-*` values |
+| The rare second accent (drafts, 404, blockquotes) | the `--magenta-*` values |
+| Ground/panel darkness | the `--ink-*` ramp |
+| Sharpness | `--radius-*` — currently `0px`; set `4px` to soften everything |
+| Type | `--font-display` (headings/labels), `--font-sans` (prose), `--text-*` |
+
+**Turning off the CRT layer.** The atmosphere is three tokens. Set
+`--scanline-opacity` to `0` to kill the scanlines, `--color-grid` to
+`transparent` for the phosphor grid, and `--glow-strength` /
+`--glow-strength-soft` to `0%` to remove all bloom. The layout is unchanged —
+those effects are purely additive.
+
+**The katakana.** Small decorative Japanese labels appear next to a few
+eyebrows (`<span class="jp" lang="ja" aria-hidden="true">`). Every instance is
+`aria-hidden`, so screen readers never announce it. To remove: delete the `.jp`
+rule in `global.css` and grep out the spans.
 
 ### Adding a third theme
 
@@ -172,9 +195,17 @@ write `data-theme` onto `document.documentElement` and persist to
 ### Contrast
 
 Both shipped themes pass WCAG AA (most pairs AAA) for body text, muted text,
-links, button labels, and the focus ring. If you change `--accent-*` or the gray
-ramp, re-check the pairs — particularly accent-as-text on the page background
-and white-on-accent for buttons, which are the two that constrain the palette.
+links, button labels, and the focus ring.
+
+If you change `--cyan-*` or the `--ink-*` ramp, re-check these pairs — they are
+the ones that actually constrain the palette:
+
+- accent-as-text on `--color-bg`
+- `--color-accent-contrast` on an accent-filled button
+- **hover direction**: `--color-accent-hover` must have *more* contrast than
+  `--color-accent` in both themes. That means going lighter in dark mode and
+  darker in light mode — which is why light uses `--cyan-800` rather than a
+  lighter step. Getting this backwards is easy and silently fails AA on hover.
 
 ### The one exception
 

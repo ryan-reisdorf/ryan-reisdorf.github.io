@@ -13,10 +13,14 @@ const tags = await getTags();
 >
   <div class="container">
     <header class="page-head">
+      <p class="eyebrow">
+        Archive<span class="jp" lang="ja" aria-hidden="true">記録</span>
+      </p>
       <h1>Projects</h1>
+      <hr class="rule" />
       <p>
-        Work I've built and maintained. Filter by tag — the filters are plain links, so they work
-        with JavaScript disabled too.
+        Work I've built and maintained. Filter by tag — the filters are plain links to real pages,
+        so they work with JavaScript disabled too.
       </p>
     </header>
 
@@ -31,11 +35,15 @@ const tags = await getTags();
   }
 
   h1 {
+    margin-block-start: var(--space-3xs);
     font-size: var(--text-2xl);
   }
 
-  p {
-    margin-block-start: var(--space-2xs);
+  .rule {
+    margin-block: var(--space-md);
+  }
+
+  .page-head p:not(.eyebrow) {
     color: var(--color-text-muted);
   }
 </style>

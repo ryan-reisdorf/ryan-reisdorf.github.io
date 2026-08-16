@@ -34,13 +34,18 @@ const hasToc = headings.filter((h) => h.depth === 2).length > 2;
   <article class="container container--narrow">
     <header class="head">
       <p class="breadcrumb">
-        <a href="/projects">← Projects</a>
+        <a href="/projects"><span aria-hidden="true">←</span> Projects</a>
       </p>
 
+      <p class="eyebrow">
+        Record<span class="jp" lang="ja" aria-hidden="true">案件</span>
+      </p>
       <h1>{title}</h1>
       <p class="summary">{summary}</p>
 
       {draft && <p class="draft-notice">Draft — visible in local dev only.</p>}
+
+      <hr class="rule" />
 
       <dl class="facts">
         <div>
@@ -131,7 +136,11 @@ const hasToc = headings.filter((h) => h.depth === 2).length > 2;
   }
 
   .breadcrumb {
-    font-size: var(--text-sm);
+    margin-block-end: var(--space-md);
+    font-family: var(--font-display);
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
   }
 
   .breadcrumb a {
@@ -139,8 +148,12 @@ const hasToc = headings.filter((h) => h.depth === 2).length > 2;
   }
 
   h1 {
-    margin-block-start: var(--space-xs);
+    margin-block-start: var(--space-3xs);
     font-size: var(--text-2xl);
+  }
+
+  .rule {
+    margin-block: var(--space-md);
   }
 
   .summary {
@@ -153,21 +166,32 @@ const hasToc = headings.filter((h) => h.depth === 2).length > 2;
   .draft-notice {
     margin-block-start: var(--space-sm);
     padding: var(--space-2xs) var(--space-xs);
-    background-color: var(--color-accent-wash);
-    border-radius: var(--radius-md);
+    background-color: var(--color-accent-2-wash);
+    border-inline-start: var(--border-width-thick) solid var(--color-accent-2);
     color: var(--color-text-muted);
-    font-size: var(--text-sm);
+    font-family: var(--font-display);
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
   }
 
+  /* Technical readout strip — boxed cells, hairline separated. */
   .facts {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
-    gap: var(--space-xs);
-    margin-block-start: var(--space-md);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+    gap: var(--border-width);
+    background-color: var(--color-border);
+    border: var(--border);
+  }
+
+  .facts > div {
+    padding: var(--space-2xs) var(--space-xs);
+    background-color: var(--color-surface);
   }
 
   dt {
     color: var(--color-text-subtle);
+    font-family: var(--font-display);
     font-size: var(--text-2xs);
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
@@ -176,7 +200,8 @@ const hasToc = headings.filter((h) => h.depth === 2).length > 2;
   dd {
     margin: 0;
     margin-block-start: var(--space-3xs);
-    font-size: var(--text-sm);
+    font-family: var(--font-display);
+    font-size: var(--text-xs);
   }
 
   .tags {
@@ -191,15 +216,18 @@ const hasToc = headings.filter((h) => h.depth === 2).length > 2;
   .tags a {
     display: inline-block;
     padding: var(--space-3xs) var(--space-2xs);
-    background-color: var(--color-accent-wash);
-    border-radius: var(--radius-full);
+    border: var(--border);
     color: var(--color-text-muted);
+    font-family: var(--font-display);
     font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
     text-decoration: none;
   }
 
   .tags a:hover {
-    color: var(--color-text);
+    border-color: var(--color-accent);
+    color: var(--color-accent);
   }
 
   .cover {
@@ -207,7 +235,6 @@ const hasToc = headings.filter((h) => h.depth === 2).length > 2;
     aspect-ratio: 16 / 9;
     object-fit: cover;
     border: var(--border);
-    border-radius: var(--radius-lg);
     margin-block-end: var(--space-lg);
   }
 
@@ -216,7 +243,7 @@ const hasToc = headings.filter((h) => h.depth === 2).length > 2;
     margin-block-end: var(--space-lg);
     background-color: var(--color-surface-sunken);
     border: var(--border);
-    border-radius: var(--radius-md);
+    border-inline-start: var(--border-width-thick) solid var(--color-accent);
   }
 
   .toc h2 {
@@ -224,6 +251,10 @@ const hasToc = headings.filter((h) => h.depth === 2).length > 2;
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
     color: var(--color-text-subtle);
+  }
+
+  .toc a {
+    text-decoration: none;
   }
 
   .toc ul {
