@@ -17,7 +17,6 @@
     width: 100%;
     height: 100%;
     display: block;
-    touch-action: none;
   }
 </style>
 </head>
@@ -245,7 +244,7 @@ void main() {
   }
 
   const FOV = Math.tan(20 * Math.PI / 180);
-  const MAGNET_Z = 0.6;  // the pointer drags a magnet across this plane, just in front of the ball
+  const MAGNET_Z = 0.6;  // an unseen magnet wanders across this plane, just in front of the ball
   let camDist = 7;
 
   const MAX_PIXELS = 2.2e6;
@@ -263,28 +262,12 @@ void main() {
   addEventListener('resize', resize);
   resize();
 
-  function screenToMagnet(x, y) {
-    const t = camDist - MAGNET_Z;
-    return [(2 * x - innerWidth) / innerHeight * FOV * t, (innerHeight - 2 * y) / innerHeight * FOV * t, MAGNET_Z];
-  }
-
-  const pointer = { x: 0, y: 0, active: false, down: false };
-  addEventListener('pointermove', e => { pointer.x = e.clientX; pointer.y = e.clientY; pointer.active = true; });
-  addEventListener('pointerdown', e => {
-    pointer.x = e.clientX; pointer.y = e.clientY; pointer.active = true; pointer.down = true;
-  });
-  const release = e => { pointer.down = false; if (e.pointerType !== 'mouse') pointer.active = false; };
-  addEventListener('pointerup', release);
-  addEventListener('pointercancel', release);
-  document.documentElement.addEventListener('mouseleave', () => { pointer.active = false; });
-  addEventListener('blur', () => { pointer.active = false; pointer.down = false; });
-
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const M = [0, 0, MAGNET_Z];                 // magnet
   const C = [0, 0, 0], Cv = [0, 0, 0];        // ball center (soft spring, so it drifts and overshoots)
   const E = [0, 0, 0], Ev = [0, 0, 0];        // elongation (springy, so it wobbles)
-  let str = 0.3;
+  const str = 0.35;
 
   function spring(pos, vel, target, k, c, dt) {
     for (let i = 0; i < 3; i++) {
@@ -310,18 +293,10 @@ void main() {
       frames = 0; frameTime = 0;
     }
 
-    let target, strTarget;
-    if (pointer.active) {
-      target = screenToMagnet(pointer.x, pointer.y);
-      strTarget = pointer.down ? 1.5 : 1.0;
-    } else {
-      const a = reducedMotion ? 0.6 : time * 0.35;
-      target = [Math.cos(a) * 1.4, Math.sin(a * 1.3) * 0.9, MAGNET_Z];
-      strTarget = 0.35;
-    }
+    const orbit = reducedMotion ? 0.6 : time * 0.35;
+    const target = [Math.cos(orbit) * 1.4, Math.sin(orbit * 1.3) * 0.9, MAGNET_Z];
     const km = 1 - Math.exp(-dt * 12);
     for (let i = 0; i < 3; i++) M[i] += (target[i] - M[i]) * km;
-    str += (strTarget - str) * (1 - Math.exp(-dt * 4));
 
     // Float: a slow bob plus a pull toward the magnet.
     const bob = reducedMotion ? 0 : 1;
