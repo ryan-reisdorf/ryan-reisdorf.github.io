@@ -1,9 +1,0 @@
-# pnpm 11 reads build-script approvals from `allowBuilds` here.
-# (pnpm 10 called this `onlyBuiltDependencies`; that key is silently ignored
-# by pnpm 11, which then fails the install in CI with ERR_PNPM_IGNORED_BUILDS.)
-#
-# esbuild is a Vite dependency whose postinstall validates the prebuilt binary
-# shipped by its @esbuild/<platform> optional dependency. Approving it keeps
-# local and CI installs identical and non-interactive.
-allowBuilds:
-  esbuild: true
