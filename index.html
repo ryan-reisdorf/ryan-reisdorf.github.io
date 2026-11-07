@@ -3,338 +3,95 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title></title>
-<style>
-  html, body {
-    margin: 0;
-    height: 100%;
-    overflow: hidden;
-    background: #fff;
-  }
-  canvas {
-    position: fixed;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    display: block;
-  }
-</style>
+<title>Ryan Reisdorf</title>
+<meta name="description" content="[One-sentence description of you for search results and link previews.]">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<canvas id="ferro"></canvas>
 
-<script id="frag" type="x-shader/x-fragment">#version 300 es
-precision highp float;
+<header class="nav">
+  <a class="nav-name" href="#top">Ryan Reisdorf</a>
+  <nav aria-label="Sections">
+    <a href="#work">Work</a>
+    <a href="#about">About</a>
+    <a href="#contact">Contact</a>
+  </nav>
+</header>
 
-uniform vec2 uRes;
-uniform float uTime;
-uniform vec3 uC;      // ball center
-uniform vec3 uM;      // magnet position
-uniform float uStr;   // magnet strength
-uniform vec3 uE;      // elongation toward the magnet
-uniform float uWob;   // amorphous wobble amount
-uniform mat3 uRot;    // slow tumble of the spike lattice
-uniform float uDist;  // camera distance (camera sits on +z looking at the origin)
-uniform float uFov;   // tan(half vertical fov)
-uniform float uBound; // bounding sphere radius
+<main id="top">
+  <section class="hero">
+    <div class="hero-stage">
+      <canvas id="ferro" aria-hidden="true"></canvas>
+    </div>
+    <div class="hero-text wrap">
+      <h1>Ryan<br>Reisdorf</h1>
+      <div class="hero-side">
+        <p class="hero-line">[One line about what you do.]</p>
+        <a class="scroll-cue mono" href="#work">Scroll ↓</a>
+      </div>
+    </div>
+  </section>
 
-out vec4 outColor;
+  <section id="work" class="section wrap">
+    <h2 class="section-label mono"><span>01</span> Selected work</h2>
+    <div class="work-grid">
+      <article class="card">
+        <div class="card-media"><span class="mono">Image</span></div>
+        <div class="card-body">
+          <h3>[Project name]</h3>
+          <p>[One-line description of the project.]</p>
+          <p class="card-meta mono">[Year] · [Role]</p>
+        </div>
+      </article>
+      <article class="card">
+        <div class="card-media"><span class="mono">Image</span></div>
+        <div class="card-body">
+          <h3>[Project name]</h3>
+          <p>[One-line description of the project.]</p>
+          <p class="card-meta mono">[Year] · [Role]</p>
+        </div>
+      </article>
+      <article class="card">
+        <div class="card-media"><span class="mono">Image</span></div>
+        <div class="card-body">
+          <h3>[Project name]</h3>
+          <p>[One-line description of the project.]</p>
+          <p class="card-meta mono">[Year] · [Role]</p>
+        </div>
+      </article>
+    </div>
+  </section>
 
-#define NUM 260.0  // number of spikes
-#define FS 0.12    // spike footprint (radians)
-#define SH 0.42    // spike height at full field
+  <section id="about" class="section wrap">
+    <h2 class="section-label mono"><span>02</span> About</h2>
+    <div class="about">
+      <p class="about-lead">[A few sentences about who you are, what you work on, and what you care about.]</p>
+      <dl class="facts">
+        <div><dt class="mono">Currently</dt><dd>[Role or focus]</dd></div>
+        <div><dt class="mono">Based in</dt><dd>[City]</dd></div>
+        <div><dt class="mono">Tools</dt><dd>[A few you use most]</dd></div>
+      </dl>
+    </div>
+  </section>
 
-vec3 gM;     // magnet relative to the ball center
-vec3 gU;     // unit elongation direction
-float gE;    // elongation amount
-float gFrac; // position on the last spike evaluated (1 = tip, 0 = valley)
-float gSH;   // height of the last spike evaluated
+  <section id="contact" class="section wrap">
+    <h2 class="section-label mono"><span>03</span> Contact</h2>
+    <p class="contact-big"><a href="mailto:">[you@example.com]</a></p>
+    <ul class="links">
+      <li><a href="https://github.com/ryan-reisdorf" rel="me noopener">GitHub ↗</a></li>
+      <li><a href="#">[LinkedIn] ↗</a></li>
+    </ul>
+  </section>
+</main>
 
-// Nearest point of a spherical Fibonacci lattice (after Keinert et al. / iq).
-void sfNearest(vec3 p, out vec3 best, out float dist, out float id) {
-  const float kTau = 6.28318530718;
-  const float kPhi = 1.61803398875;
-  float k = max(2.0, floor(log2(NUM * kTau * 0.5 * sqrt(5.0) * (1.0 - p.z * p.z)) / log2(kPhi + 1.0)));
-  float Fk = pow(kPhi, k) / sqrt(5.0);
-  vec2 F = vec2(round(Fk), round(Fk * kPhi));
-  vec2 ka = 2.0 * F / NUM;
-  vec2 kb = kTau * (fract((F + 1.0) * kPhi) - (kPhi - 1.0));
-  mat2 iB = mat2(ka.y, -ka.x, kb.y, -kb.x) / (ka.y * kb.x - ka.x * kb.y);
-  vec2 c = floor(iB * vec2(atan(p.y, p.x), p.z - 1.0 + 1.0 / NUM));
-  float d = 8.0;
-  for (int s = 0; s < 4; s++) {
-    vec2 uv = vec2(s & 1, s >> 1);
-    float i = clamp(dot(F, uv + c), 0.0, NUM - 1.0);
-    float phi = kTau * fract(i * kPhi);
-    float cosT = 1.0 - (2.0 * i + 1.0) / NUM;
-    float sinT = sqrt(1.0 - cosT * cosT);
-    vec3 q = vec3(cos(phi) * sinT, sin(phi) * sinT, cosT);
-    float t = dot(q - p, q - p);
-    if (t < d) { d = t; best = q; id = i; }
-  }
-  dist = sqrt(d);
-}
+<footer class="footer wrap mono">
+  <span>© 2026 Ryan Reisdorf</span>
+  <a href="#top">Back to top ↑</a>
+</footer>
 
-float field(vec3 x) {
-  vec3 d = x - gM;
-  return uStr * exp(-dot(d, d) / 0.8);
-}
-
-float wobble(vec3 n) {
-  return sin(dot(n, vec3(2.1, 1.3, -1.7)) + uTime * 0.9) * sin(dot(n, vec3(-1.2, 2.4, 1.1)) + uTime * 0.7)
-       + 0.5 * sin(dot(n, vec3(3.1, -2.2, 1.9)) - uTime * 1.3);
-}
-
-// Radius of the smooth body in direction n: an amorphous blob drawn out toward the magnet.
-float baseR(vec3 n) {
-  float r = 1.0 + gE * pow(max(dot(n, gU), 0.0), 3.0);
-  r *= 1.0 + 0.1 * field(n);
-  return r + uWob * wobble(n);
-}
-
-// Radius of the fluid surface along p (relative to the center). Depends on |p| because spikes lean.
-float surfR(vec3 p) {
-  float lp = length(p);
-  vec3 n = p / lp;
-  float rb = baseR(n);
-  gFrac = 1.0;
-  gSH = 0.0;
-
-  // Spikes tilt to point at the magnet; ones already facing it stay upright.
-  vec3 tm = normalize(gM - n * rb);
-  vec3 lean = (tm - n * dot(tm, n)) * 0.9 * min(field(n * rb), 1.5);
-  vec3 nl = normalize(n - lean * max(lp - rb, 0.0));
-
-  vec3 q; float d, id;
-  sfNearest(uRot * nl, q, d, id);
-  float fc = min(field((q * uRot) * rb), 1.6);
-  float h = SH * (0.25 + 0.75 * fc) * (1.0 + 0.07 * sin(uTime * 2.1 + id * 1.7));
-  float s = pow(max(0.0, 1.0 - d / FS), 1.5);
-  gFrac = s;
-  gSH = h;
-  return rb + h * s;
-}
-
-float sdf(vec3 p) { return length(p) - surfR(p); }
-
-vec3 calcNormal(vec3 p) {
-  const vec2 k = vec2(1.0, -1.0);
-  const float e = 0.0015;
-  return normalize(k.xyy * sdf(p + k.xyy * e) + k.yyx * sdf(p + k.yyx * e) +
-                   k.yxy * sdf(p + k.yxy * e) + k.xxx * sdf(p + k.xxx * e));
-}
-
-// Rectangular softbox seen in direction r.
-float panel(vec3 r, vec3 n, vec2 size, float intensity) {
-  float c = dot(r, n);
-  if (c <= 0.0) return 0.0;
-  vec3 t1 = normalize(cross(n, vec3(0.0, 1.0, 0.0)));
-  vec3 t2 = cross(t1, n);
-  vec2 uv = abs(vec2(dot(r, t1), dot(r, t2)) / c);
-  vec2 m = 1.0 - smoothstep(size * 0.75, size, uv);
-  return intensity * m.x * m.y;
-}
-
-// White studio, linear radiance.
-vec3 env(vec3 r) {
-  vec3 c = mix(vec3(0.06), vec3(0.3), smoothstep(-0.6, 0.8, r.y)) * (1.0 - 0.6 * smoothstep(0.3, 1.0, r.z));
-  c += vec3(1.0) * panel(r, normalize(vec3(0.35, 1.0, 0.3)), vec2(0.5, 0.12), 14.0);
-  c += vec3(1.0) * panel(r, normalize(vec3(-0.8, 0.4, 0.8)), vec2(0.09, 0.5), 18.0);
-  c += vec3(1.0) * panel(r, normalize(vec3(-0.45, 0.55, 1.0)), vec2(0.08, 0.35), 16.0);
-  c += vec3(1.0) * panel(r, normalize(vec3(0.6, -0.35, 1.0)), vec2(0.3, 0.06), 10.0);
-  c += vec3(1.0, 0.55, 0.25) * panel(r, normalize(vec3(0.9, 0.1, 0.6)), vec2(0.07, 0.45), 14.0);
-  c += vec3(0.9, 0.95, 1.0) * panel(r, normalize(vec3(0.2, -0.8, 0.5)), vec2(0.5, 0.1), 6.0);
-  return c;
-}
-
-vec3 aces(vec3 x) {
-  return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0);
-}
-
-vec3 shade(vec3 p, vec3 rd) {
-  vec3 n = calcNormal(p);
-  surfR(p);
-  float cavity = 1.0 - (1.0 - gFrac) * 0.45 * clamp(gSH / 0.12, 0.0, 1.0);
-  float ndv = clamp(dot(n, -rd), 0.0, 1.0);
-  float F = 0.045 + 0.5 * pow(1.0 - ndv, 5.0);
-  vec3 c = env(reflect(rd, n)) * F * cavity + vec3(0.004, 0.0035, 0.003);
-  return pow(aces(c * 1.1), vec3(1.0 / 2.2));
-}
-
-void main() {
-  gE = length(uE);
-  gU = gE > 1e-4 ? uE / gE : vec3(1.0, 0.0, 0.0);
-  gM = uM - uC;
-
-  vec2 uv = (2.0 * gl_FragCoord.xy - uRes) / uRes.y;
-  vec3 ro = vec3(0.0, 0.0, uDist) - uC;
-  vec3 rd = normalize(vec3(uv * uFov, -1.0));
-  float pix = 2.0 * uFov / uRes.y;
-
-  // Bounding sphere.
-  float b = dot(ro, rd);
-  float disc = b * b - dot(ro, ro) + uBound * uBound;
-  if (disc <= 0.0) { outColor = vec4(0.0); return; }
-  float sq = sqrt(disc);
-  float t = max(-b - sq, 0.0), tmax = -b + sq;
-
-  float tp = t, hit = -1.0;
-  float closest = 1e5, tClose = t;  // nearest miss, in pixels, for edge antialiasing
-  for (int i = 0; i < 160; i++) {
-    if (t > tmax) break;
-    float d = sdf(ro + rd * t);
-    if (d < 0.0) {
-      float a = tp, c = t;
-      for (int j = 0; j < 6; j++) {
-        float m = 0.5 * (a + c);
-        if (sdf(ro + rd * m) < 0.0) c = m; else a = m;
-      }
-      hit = c;
-      break;
-    }
-    float px = d / (pix * t);
-    if (px < closest) { closest = px; tClose = t; }
-    tp = t;
-    t += clamp(d * 0.35, 0.003, 0.05);
-  }
-
-  if (hit > 0.0) {
-    outColor = vec4(shade(ro + rd * hit, rd), 1.0);
-  } else if (closest < 1.0) {
-    float a = 1.0 - closest;
-    outColor = vec4(shade(ro + rd * tClose, rd) * a, a);
-  } else {
-    outColor = vec4(0.0);
-  }
-}
-</script>
-
-<script>
-(() => {
-  const canvas = document.getElementById('ferro');
-  const gl = canvas.getContext('webgl2', {
-    antialias: false, alpha: true, depth: false, stencil: false, powerPreference: 'high-performance',
-  });
-  if (!gl) return;
-
-  function compile(type, src) {
-    const s = gl.createShader(type);
-    gl.shaderSource(s, src);
-    gl.compileShader(s);
-    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(s));
-    return s;
-  }
-  const prog = gl.createProgram();
-  gl.attachShader(prog, compile(gl.VERTEX_SHADER,
-    '#version 300 es\nin vec2 p; void main() { gl_Position = vec4(p, 0.0, 1.0); }'));
-  gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, document.getElementById('frag').textContent));
-  gl.bindAttribLocation(prog, 0, 'p');
-  gl.linkProgram(prog);
-  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { console.error(gl.getProgramInfoLog(prog)); return; }
-  gl.useProgram(prog);
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-  gl.enableVertexAttribArray(0);
-  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-
-  const U = {};
-  for (const n of ['uRes', 'uTime', 'uC', 'uM', 'uStr', 'uE', 'uWob', 'uRot', 'uDist', 'uFov', 'uBound']) {
-    U[n] = gl.getUniformLocation(prog, n);
-  }
-
-  const FOV = Math.tan(20 * Math.PI / 180);
-  const MAGNET_Z = 0.6;  // an unseen magnet wanders across this plane, just in front of the ball
-  let camDist = 7;
-
-  const MAX_PIXELS = 2.2e6;
-  let scale = 1;
-
-  function resize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const w = innerWidth * dpr * scale, h = innerHeight * dpr * scale;
-    const k = Math.min(1, Math.sqrt(MAX_PIXELS / (w * h)));
-    canvas.width = Math.max(1, Math.round(w * k));
-    canvas.height = Math.max(1, Math.round(h * k));
-    gl.viewport(0, 0, canvas.width, canvas.height);
-    camDist = 2.2 / (FOV * Math.min(1, innerWidth / innerHeight));
-  }
-  addEventListener('resize', resize);
-  resize();
-
-  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  const M = [0, 0, MAGNET_Z];                 // magnet
-  const C = [0, 0, 0], Cv = [0, 0, 0];        // ball center (soft spring, so it drifts and overshoots)
-  const E = [0, 0, 0], Ev = [0, 0, 0];        // elongation (springy, so it wobbles)
-  const str = 0.35;
-
-  function spring(pos, vel, target, k, c, dt) {
-    for (let i = 0; i < 3; i++) {
-      vel[i] += (k * (target[i] - pos[i]) - c * vel[i]) * dt;
-      pos[i] += vel[i] * dt;
-    }
-  }
-  const len = v => Math.hypot(v[0], v[1], v[2]);
-
-  let last = performance.now(), time = 0;
-  let frames = 0, frameTime = 0;
-
-  function frame(now) {
-    const raw = Math.max(0, (now - last) / 1000);
-    last = now;
-    const dt = Math.min(raw, 1 / 30);
-    time += dt;
-
-    // Drop resolution if the GPU can't keep up.
-    frames++; frameTime += raw;
-    if (frames === 40) {
-      if (frameTime / frames > 0.021 && scale > 0.45) { scale *= 0.85; resize(); }
-      frames = 0; frameTime = 0;
-    }
-
-    const orbit = reducedMotion ? 0.6 : time * 0.35;
-    const target = [Math.cos(orbit) * 1.4, Math.sin(orbit * 1.3) * 0.9, MAGNET_Z];
-    const km = 1 - Math.exp(-dt * 12);
-    for (let i = 0; i < 3; i++) M[i] += (target[i] - M[i]) * km;
-
-    // Float: a slow bob plus a pull toward the magnet.
-    const bob = reducedMotion ? 0 : 1;
-    let pull = [M[0] * 0.22 * str, M[1] * 0.22 * str];
-    const pl = Math.hypot(pull[0], pull[1]);
-    if (pl > 0.5) pull = [pull[0] * 0.5 / pl, pull[1] * 0.5 / pl];
-    spring(C, Cv, [pull[0] + bob * 0.06 * Math.sin(time * 0.6), pull[1] + bob * 0.09 * Math.sin(time * 0.8), 0], 8, 3, dt);
-
-    const d = [M[0] - C[0], M[1] - C[1], M[2] - C[2]];
-    const dist = len(d);
-    const s01 = Math.min(Math.max((dist - 0.4) / 0.9, 0), 1);
-    const mag = Math.min(0.55, 0.5 * str * s01 * s01 * (3 - 2 * s01) * Math.exp(-(Math.max(dist - 1.6, 0) ** 2) / 1.5));
-    spring(E, Ev, [0, 1, 2].map(i => d[i] / Math.max(dist, 1e-4) * mag + Cv[i] * 0.15), 30, 4, dt);
-
-    const wob = 0.05 + Math.min(0.1, len(Cv) * 0.08 + len(Ev) * 0.04);
-
-    // Slow tumble: R = Ry(a) * Rx(b), column-major.
-    const a = bob * time * 0.11, b = bob * time * 0.07;
-    const ca = Math.cos(a), sa = Math.sin(a), cb = Math.cos(b), sb = Math.sin(b);
-    const rot = [ca, 0, -sa, sa * sb, cb, ca * sb, sa * cb, -sb, ca * cb];
-
-    gl.uniform2f(U.uRes, canvas.width, canvas.height);
-    gl.uniform1f(U.uTime, time);
-    gl.uniform3fv(U.uC, C);
-    gl.uniform3fv(U.uM, M);
-    gl.uniform1f(U.uStr, str);
-    gl.uniform3fv(U.uE, E);
-    gl.uniform1f(U.uWob, wob);
-    gl.uniformMatrix3fv(U.uRot, false, rot);
-    gl.uniform1f(U.uDist, camDist);
-    gl.uniform1f(U.uFov, FOV);
-    gl.uniform1f(U.uBound, (1 + len(E)) * 1.12 + 2 * wob + 0.42 * 1.6 + 0.1);
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
-
-    requestAnimationFrame(frame);
-  }
-  requestAnimationFrame(frame);
-})();
-</script>
+<script src="ferrofluid.js"></script>
 </body>
 </html>
