@@ -190,3 +190,14 @@ h1, h2, h3, p, dl, dd { margin: 0; }
   .hero-side { align-items: flex-start; text-align: left; }
   .about { grid-template-columns: 1fr; }
 }
+
+/* Logos */
+.icon { fill: currentColor; flex: none; }
+.icons { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; justify-content: center; }
+.card-media .icons { color: #9a9a9a; transition: color 0.3s; }
+.card:hover .card-media .icons { color: var(--fg); }
+.with-icon { display: inline-flex; align-items: center; gap: 8px; }
+.toolbelt { margin-top: clamp(40px, 6vw, 72px); display: grid; gap: 20px; }
+.toolbelt h3 { font-size: inherit; font-weight: 400; color: var(--muted); }
+.toolbelt .icons { justify-content: flex-start; gap: 24px; color: var(--muted); }
+.toolbelt .icon:hover { color: var(--fg); }
