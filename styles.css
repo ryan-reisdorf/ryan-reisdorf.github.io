@@ -211,10 +211,10 @@ h1, h2, h3, p, dl, dd { margin: 0; }
 .is-glitching .glitch-canvas { opacity: 1; }
 .is-glitching .card-media .icons { color: #fff; animation: rgb-split 0.35s steps(2) infinite; }
 @keyframes rgb-split {
-  0%   { transform: translate(0, 0);     filter: drop-shadow(3px 0 #ff1f8f) drop-shadow(-3px 0 #16e0ff); }
-  33%  { transform: translate(-3px, 1px); filter: drop-shadow(-4px 0 #ff1f8f) drop-shadow(4px 0 #16e0ff); }
-  66%  { transform: translate(2px, -1px); filter: drop-shadow(2px 0 #ffd400) drop-shadow(-2px 0 #3a6bff); }
-  100% { transform: translate(0, 0);     filter: drop-shadow(3px 0 #ff1f8f) drop-shadow(-3px 0 #16e0ff); }
+  0%   { transform: translate(0, 0);      filter: drop-shadow(3px 0 rgba(255,255,255,.5)); }
+  33%  { transform: translate(-3px, 1px); filter: drop-shadow(-4px 0 rgba(255,255,255,.35)); }
+  66%  { transform: translate(2px, -1px); filter: drop-shadow(2px 0 rgba(255,255,255,.5)); }
+  100% { transform: translate(0, 0);      filter: drop-shadow(3px 0 rgba(255,255,255,.35)); }
 }
 @media (prefers-reduced-motion: reduce) { .is-glitching .card-media .icons { animation: none; } }
 

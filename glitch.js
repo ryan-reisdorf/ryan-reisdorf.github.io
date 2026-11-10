@@ -1,7 +1,7 @@
 // Hover glitch for cards marked [data-glitch]: chromatic streaks, scanlines, pixel noise.
 (() => {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const SPECTRUM = ['#ff1f8f', '#ff2a2a', '#ff7a00', '#ffd400', '#3cff6b', '#16e0ff', '#3a6bff', '#8a3cff'];
+  const SPECTRUM = ['#2a2a2a', '#555', '#8a8a8a', '#c4c4c4', '#fff', '#c4c4c4', '#8a8a8a', '#3a3a3a'];
   const rand = (a, b) => a + Math.random() * (b - a);
   const pick = (arr) => arr[(Math.random() * arr.length) | 0];
 
@@ -21,7 +21,7 @@
   }
 
   function draw(ctx, w, h, bands, t) {
-    ctx.fillStyle = '#140b10';
+    ctx.fillStyle = '#0b0b0b';
     ctx.fillRect(0, 0, w, h);
 
     for (const b of bands) {
@@ -88,6 +88,7 @@
     const stop = () => {
       card.classList.remove('is-glitching');
       cancelAnimationFrame(raf);
+      ctx.clearRect(0, 0, w, h);
     };
 
     card.addEventListener('pointerenter', start);
