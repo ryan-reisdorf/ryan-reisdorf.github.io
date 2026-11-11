@@ -227,3 +227,40 @@ h1, h2, h3, p, dl, dd { margin: 0; }
 .empty { color: var(--muted); }
 .section-tight { padding-block: clamp(40px, 5vw, 64px); }
 .section-tight .section-label { margin-bottom: 16px; }
+
+/* QA card: CI pipeline run on hover (stage -> link -> stage -> link -> stage) */
+.pipe { gap: 0; flex-wrap: nowrap; }
+.pipe .stage { position: relative; display: grid; place-items: center; width: 64px; height: 64px; }
+.pipe .stage::before {
+  content: ""; position: absolute; inset: 4px; border-radius: 50%;
+  border: 1.5px solid currentColor; opacity: 0;
+}
+.pipe .link { position: relative; width: clamp(20px, 4vw, 44px); height: 2px; background: #cfcfcf; transform: scaleX(0); transform-origin: left; transition: transform 0.4s ease; }
+.pipe .link::after {
+  content: ""; position: absolute; top: 50%; left: 0; width: 8px; height: 8px; margin-top: -4px;
+  border-radius: 50%; background: var(--fg); opacity: 0;
+}
+[data-pipeline]:hover .pipe .link { transform: scaleX(1); }
+[data-pipeline]:hover .pipe .link:nth-of-type(2) { transition-delay: 0.1s; }
+[data-pipeline]:hover .s1 { animation: stage1 3s linear infinite; }
+[data-pipeline]:hover .s2 { animation: stage2 3s linear infinite; }
+[data-pipeline]:hover .s3 { animation: stage3 3s linear infinite; }
+[data-pipeline]:hover .s1::before { animation: ring1 3s ease-out infinite; }
+[data-pipeline]:hover .s2::before { animation: ring2 3s ease-out infinite; }
+[data-pipeline]:hover .s3::before { animation: ring3 3s ease-out infinite; }
+[data-pipeline]:hover .stage + .link::after { animation: pkt1 3s ease-in-out infinite; }
+[data-pipeline]:hover .s2 + .link::after { animation: pkt2 3s ease-in-out infinite; }
+
+@keyframes stage1 { 0%, 4% { color: #9a9a9a; } 8%, 92% { color: var(--fg); } 100% { color: #9a9a9a; } }
+@keyframes stage2 { 0%, 42% { color: #9a9a9a; } 46%, 92% { color: var(--fg); } 100% { color: #9a9a9a; } }
+@keyframes stage3 { 0%, 76% { color: #9a9a9a; } 80%, 92% { color: var(--fg); } 100% { color: #9a9a9a; } }
+@keyframes ring1 { 0%, 4% { opacity: 0; transform: scale(.8); } 8% { opacity: 1; transform: scale(.9); } 30%, 100% { opacity: 0; transform: scale(1.35); } }
+@keyframes ring2 { 0%, 42% { opacity: 0; transform: scale(.8); } 46% { opacity: 1; transform: scale(.9); } 68%, 100% { opacity: 0; transform: scale(1.35); } }
+@keyframes ring3 { 0%, 76% { opacity: 0; transform: scale(.8); } 80% { opacity: 1; transform: scale(.9); } 96%, 100% { opacity: 0; transform: scale(1.35); } }
+@keyframes pkt1 { 0%, 12% { left: 0; opacity: 0; } 15% { opacity: 1; } 38% { left: calc(100% - 8px); opacity: 1; } 42%, 100% { left: calc(100% - 8px); opacity: 0; } }
+@keyframes pkt2 { 0%, 50% { left: 0; opacity: 0; } 53% { opacity: 1; } 72% { left: calc(100% - 8px); opacity: 1; } 76%, 100% { left: calc(100% - 8px); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-pipeline]:hover .stage { animation: none; color: var(--fg); }
+  [data-pipeline]:hover .stage::before, [data-pipeline]:hover .link::after { animation: none; }
+}
