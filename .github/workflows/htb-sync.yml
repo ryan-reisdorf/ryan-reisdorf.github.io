@@ -29,7 +29,6 @@ jobs:
       - name: Fetch progress from HTB
         env:
           HTB_APP_TOKEN: ${{ secrets.HTB_APP_TOKEN }}
-          HTB_DEBUG: "1"   # temporary while verifying the API
         run: node scripts/htb-sync.mjs
       - name: Commit if something changed
         env:

@@ -1,0 +1,4 @@
+{
+  "_how": "Add one entry per lab. The key is the lab's ID from the tree (click a lab and copy the part after # in the address bar, e.g. machine-1 or sherlock-631). Both fields are optional. Writeups and videos only show for retired labs.",
+  "_example": { "writeup": "writeups/lame.md", "video": "https://www.youtube.com/watch?v=VIDEO_ID_11" }
+}

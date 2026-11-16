@@ -20,7 +20,6 @@ const HOST = new URL(BASE).origin;
 const USER_ID = process.env.HTB_USER_ID || '4224217';
 const TOKEN = (process.env.HTB_APP_TOKEN || '').trim();
 const DRY = process.argv.includes('--dry-run');
-const DEBUG = process.env.HTB_DEBUG === '1';
 
 class ApiError extends Error {}
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -80,8 +79,7 @@ async function anyOf(label, attempts) {
   }
   if (!results.length) throw new ApiError(`${label}: every endpoint failed\n  ` + errors.join('\n  '));
   const rows = results.flat();
-  if (DEBUG && rows[0]) console.log(`[debug] ${label} sample:`, JSON.stringify(rows[0]).slice(0, 900));
-  else if (rows[0]) console.log(`  ${label} fields: ${Object.keys(rows[0]).join(', ')}`);
+  if (rows[0]) console.log(`  ${label} fields: ${Object.keys(rows[0]).join(', ')}`);
   return rows;
 }
 // Try endpoints in order and use the first one that answers.
@@ -91,8 +89,7 @@ async function firstOf(label, attempts) {
     try {
       const rows = await fn();
       tried.push(`ok   ${label}: ${name} (${rows.length})`);
-      if (DEBUG && rows[0]) console.log(`[debug] ${label} sample:`, JSON.stringify(rows[0]).slice(0, 700));
-      else if (rows[0]) console.log(`  ${label} fields: ${Object.keys(rows[0]).join(', ')}`);
+      if (rows[0]) console.log(`  ${label} fields: ${Object.keys(rows[0]).join(', ')}`);
       return rows;
     } catch (err) { if (!(err instanceof ApiError)) throw err; errors.push(err.message); tried.push(`fail ${label}: ${name} -> ${err.message}`); }
   }
@@ -175,7 +172,6 @@ async function prolabs() {
   const labs = json.data?.labs || json.labs || (Array.isArray(json.data) ? json.data : null);
   if (!Array.isArray(labs)) throw new ApiError('/prolabs: no lab list');
   console.log(`  prolabs fields: ${Object.keys(labs[0] || {}).join(', ')}`);
-  if (DEBUG && labs[0]) console.log('[debug] prolabs sample:', JSON.stringify(labs[0]).slice(0, 900));
   tried.push(`ok   prolabs (${labs.length})`);
   return labs.map((l) => {
     const pct = Math.max(0, Math.min(100, Math.round(Number(pick(l, 'ownership', 'progress', 'ownership_percentage')) || 0)));
@@ -229,23 +225,17 @@ async function startingPoint() {
   return out;
 }
 
-/* ---------- completion dates and a cross-check against the public profile ---------- */
-async function profile() {
-  const info = { name: null, dates: new Map(), counts: {} };
+/* ---------- cross-check against the numbers on my public profile ---------- */
+// HTB's API has no completion dates, so this only compares totals. Never prints account details.
+async function profileCounts() {
+  const counts = {};
   const basic = await optional('profile', async () => (await api('/user/profile/basic/' + USER_ID)).profile, null);
-  if (basic) {
-    info.name = basic.name || null;
-    info.counts = { 'machines (root)': basic.system_owns, 'machines (user)': basic.user_owns };
+  if (basic && Number.isFinite(Number(basic.system_owns))) counts.machine = Number(basic.system_owns);
+  for (const [type, route] of [['sherlock', 'sherlocks'], ['challenge', 'challenges']]) {
+    const solved = await optional('profile ' + route, async () => (await api(`/user/profile/progress/${route}/${USER_ID}`)).profile?.challenge_owns?.solved, undefined);
+    if (Number.isFinite(Number(solved))) counts[type] = Number(solved);
   }
-  const activity = await optional('profile activity', async () => (await api('/user/profile/activity/' + USER_ID)).profile?.activity, []);
-  for (const a of activity || []) {
-    const kind = String(a.object_type || '').toLowerCase();
-    if (kind === 'machine' && a.type !== 'root') continue;
-    const type = { machine: 'machine', challenge: 'challenge', sherlock: 'sherlock', fortress: 'fortress', endgame: 'endgame' }[kind];
-    if (type && a.id !== undefined && day(a.date)) info.dates.set(`${type}-${a.id}`, day(a.date));
-  }
-  info.recent = (activity || []).slice(0, 8).map((a) => `${day(a.date)} ${a.object_type}/${a.type} ${a.name}`);
-  return info;
+  return counts;
 }
 
 /* ---------- the no-JS / screen-reader list inside htb.html ---------- */
@@ -282,16 +272,7 @@ async function main() {
   const unique = new Map();
   for (const lab of labs) if (!unique.has(lab.id)) unique.set(lab.id, lab);
   labs.length = 0; labs.push(...unique.values());
-  const who = await profile();
-  if (DEBUG) {      // endpoint discovery: prints status and shape only
-    for (const route of ['/sp/tiers', '/starting-point/tiers', '/starting-point/tier/1', '/starting-point', '/sp/progress', '/sp/machines',
-      `/profile/activity/${USER_ID}`, `/user/activity/${USER_ID}`, `/user/profile/content/${USER_ID}`, `/user/profile/progress/sherlocks/${USER_ID}`,
-      `/user/profile/progress/challenges/${USER_ID}`, `/user/profile/progress/machines/os/${USER_ID}`, `/user/profile/progress/prolab/${USER_ID}`, '/user/info',
-      `/user/profile/basic/${USER_ID}`, '/sherlocks/631', '/sherlocks/631/progress', '/sherlocks/631/info', '/sherlocks/631/play', '/user/profile/summary', `/user/profile/graph/1Y/${USER_ID}`]) {
-      try { const j = await api(route); console.log(`[probe] ${route} -> ${JSON.stringify(j).slice(0, 420)}`); }
-      catch (err) { console.log(`[probe] ${route} -> ${String(err.message).slice(0, 110)}`); }
-    }
-  }
+  const profile = await profileCounts();
   console.log(tried.map((t) => '  ' + t).join('\n'));
 
   const prevNodes = new Map((prev?.nodes || []).map((n) => [n.id, n]));
@@ -299,8 +280,8 @@ async function main() {
   const today = new Date().toISOString().slice(0, 10);
   for (const n of labs) {
     const old = prevNodes.get(n.id);
-    // Date: the profile's activity feed if it has one, else what we stored, else today for a completion first seen on this run.
-    n.completedAt = !n.completed ? null : who.dates.get(n.id) || old?.completedAt || (prev && old && !old.completed ? today : null);
+    // HTB doesn't expose completion dates. Keep a stored date; a completion first seen on this run gets today's date.
+    n.completedAt = !n.completed ? null : old?.completedAt || (old && !old.completed ? today : null);
   }
 
   const result = layout(labs, prev);
@@ -308,14 +289,13 @@ async function main() {
   const counts = {};
   for (const n of result.nodes) { const c = (counts[n.type] ||= [0, 0]); c[1]++; if (n.completed) c[0]++; }
   console.log('Completed / total by type:', Object.entries(counts).map(([t, [d, a]]) => `${t} ${d}/${a}`).join(', '));
-  if (who.counts['machines (root)'] !== undefined) console.log(`Profile says: ${who.counts['machines (root)']} machine root owns, ${who.counts['machines (user)']} user owns.`);
-  if (who.recent?.length) console.log('Recent profile activity:\n  ' + who.recent.join('\n  '));
-  const recentIds = [...who.dates.keys()];
-  const missing = recentIds.filter((id) => { const n = result.nodes.find((x) => x.id === id); return n && !n.completed; });
-  console.log(`Cross-check: ${recentIds.length - missing.length} of ${recentIds.length} recent profile completions are marked completed in the catalog.` + (missing.length ? ' Not matching: ' + missing.join(', ') : ''));
+  for (const [type, expected] of Object.entries(profile)) {
+    const got = counts[type]?.[0] ?? 0;
+    console.log(`Cross-check ${type}: profile says ${expected}, catalog has ${got} completed -> ${expected === got ? 'match' : 'MISMATCH'}`);
+  }
   console.log(`${result.nodes.length} labs, ${result.clusters.length} clusters, ${result.edges.length} paths, ${calls} API calls.`);
 
-  const body = { version: 1, user: { id: Number(USER_ID), name: who.name }, layout: result.layout, regions: CONFIG.regions, bands: CONFIG.bands.map((b) => b.label), clusters: result.clusters, nodes: result.nodes, edges: result.edges, roots: result.roots };
+  const body = { version: 1, user: { id: Number(USER_ID) }, layout: result.layout, regions: CONFIG.regions, bands: CONFIG.bands.map((b) => b.label), clusters: result.clusters, nodes: result.nodes, edges: result.edges, roots: result.roots };
   const { syncedAt: _ignored, ...prevBody } = prev || {};
   if (DRY) { console.log('Dry run: not writing files.'); return; }
   if (JSON.stringify(prevBody) === JSON.stringify(body)) console.log('No changes since the last sync.');
