@@ -1,0 +1,49 @@
+name: Sync Hack The Box progress
+
+on:
+  schedule:
+    - cron: "17 9 * * *"   # nightly, about 3 AM Central
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/htb-*.mjs"
+      - ".github/workflows/htb-sync.yml"
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: htb-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Fetch progress from HTB
+        env:
+          HTB_APP_TOKEN: ${{ secrets.HTB_APP_TOKEN }}
+          HTB_DEBUG: "1"   # temporary while verifying the API
+        run: node scripts/htb-sync.mjs
+      - name: Commit if something changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git add data/htb.json htb.html
+          if git diff --cached --quiet; then
+            echo "Nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Sync Hack The Box progress"
+          git pull --rebase --autostash origin main
+          git push origin HEAD:main
+          # Pushes made with the workflow token don't trigger other workflows, so start the Pages deploy here.
+          gh workflow run deploy.yml --ref main
