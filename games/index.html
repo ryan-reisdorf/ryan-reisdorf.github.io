@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Games · Ryan Reisdorf</title>
+<meta name="description" content="Three small black-and-white pixel games by Ryan Reisdorf.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Crect width='8' height='8'/%3E%3Crect x='1' y='1' width='6' height='6' fill='%23fff'/%3E%3Crect x='2' y='2' width='4' height='4'/%3E%3Crect x='3' y='3' width='2' height='2' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+
+<header class="nav">
+  <a class="nav-name" href="../index.html">Ryan Reisdorf</a>
+  <nav aria-label="Sections">
+    <a href="../index.html#work">Work</a>
+    <a href="../index.html#about">About</a>
+    <a href="index.html" aria-current="page">Games</a>
+    <a href="../index.html#contact">Contact</a>
+  </nav>
+</header>
+
+<main id="top">
+  <section class="page-head wrap">
+    <a class="back mono" href="../index.html">← Back</a>
+    <h1>Games</h1>
+  </section>
+
+  <section class="section section-tight wrap">
+    <h2 class="section-label mono"><span>01</span> Patience games</h2>
+    <div class="work-grid">
+      <a class="card card-link" href="click-the-box.html">
+        <div class="card-media pixel"><canvas data-preview="box" role="img" aria-label="Pixel art of a white box"></canvas></div>
+        <div class="card-body">
+          <h3>Click the Box</h3>
+          <p>Three levels. The last one might take a century.</p>
+          <p class="card-meta mono">3 levels · Up to 100 years →</p>
+        </div>
+      </a>
+      <a class="card card-link" href="water-the-plant.html">
+        <div class="card-media pixel"><canvas data-preview="plant" role="img" aria-label="Pixel art of a flowering plant in a pot"></canvas></div>
+        <div class="card-body">
+          <h3>Water the Plant</h3>
+          <p>Keep it watered until it blooms. Don’t overdo it.</p>
+          <p class="card-meta mono">About 8 hours →</p>
+        </div>
+      </a>
+      <a class="card card-link" href="coconuts.html">
+        <div class="card-media pixel"><canvas data-preview="palm" role="img" aria-label="Pixel art of a palm tree with coconuts"></canvas></div>
+        <div class="card-body">
+          <h3>Coconuts from the Palm Tree</h3>
+          <p>Pick them while they’re ripe. Each takes about half an hour.</p>
+          <p class="card-meta mono">Endless →</p>
+        </div>
+      </a>
+    </div>
+    <p class="games-note mono">Real-time. Progress saves in your browser.</p>
+  </section>
+</main>
+
+<footer class="footer wrap mono">
+  <span>© 2026 Ryan Reisdorf</span>
+  <a href="#top">Back to top ↑</a>
+</footer>
+<script src="engine.js"></script>
+<script src="sprites.js"></script>
+<script src="hub.js"></script>
+</body>
+</html>

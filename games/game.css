@@ -1,0 +1,14 @@
+/* Fullscreen black page for a single game. All text is drawn on canvas. */
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #000; color: #fff; overflow: hidden; }
+body { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+#back { align-self: flex-start; padding: 12px 16px; line-height: 0; }
+#back canvas { display: block; image-rendering: pixelated; }
+#back:focus-visible { outline: 2px solid #fff; outline-offset: -4px; }
+#stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+#screen {
+  display: block; image-rendering: pixelated;
+  touch-action: none; user-select: none; -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+noscript { padding: 16px; font-family: monospace; }

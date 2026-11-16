@@ -265,3 +265,11 @@ h1, h2, h3, p, dl, dd { margin: 0; }
   [data-pipeline]:hover .stage::before, [data-pipeline]:hover .link::after { animation: none; }
 }
 
+
+/* Games hub */
+.card .card-media.pixel, .card:hover .card-media.pixel { background: #000; }
+.card-media.pixel canvas { display: block; image-rendering: pixelated; }
+.games-note { margin-top: clamp(24px, 4vw, 40px); color: var(--muted); }
+.nav nav a[aria-current="page"] { text-decoration: underline; text-underline-offset: 4px; }
+.nav-name { white-space: nowrap; }
+@media (max-width: 420px) { .nav nav { gap: 12px; } .nav { font-size: 15px; } }
