@@ -42,7 +42,7 @@ export const CONFIG = {
 };
 
 const CAP = 12;            // nodes per cluster
-const SPACING = 92;        // distance between cluster centers
+const SPACING = 90;        // distance between cluster centers
 const INNER = 215;         // radius where the first band starts
 const BAND_GAP = 30;       // empty ring between difficulty bands
 const EDGE_PAD = 50;       // margin from a region's boundary lines
@@ -86,16 +86,24 @@ export function classify(node) {
 
 /* ---------- band geometry ---------- */
 
-// Cluster positions along one row of a wedge, ordered from the middle outward.
+// 0..count-1 in an order that keeps any prefix evenly spread (bit reversal, starting mid-row).
+function spreadOrder(count) {
+  const bits = Math.max(1, Math.ceil(Math.log2(count))), order = [];
+  for (let v = 0; v < 1 << bits; v++) {
+    let r = 0;
+    for (let b = 0; b < bits; b++) if (v & (1 << b)) r |= 1 << (bits - 1 - b);
+    if (r < count) order.push((r + (count >> 1)) % count);
+  }
+  return order;
+}
+// Cluster positions along one row of a wedge. Rows fill evenly spread out, so a
+// half-empty row still spans its whole wedge and a new cluster drops into a gap.
 function rowSlots(a0, a1, radius, row) {
   const usable = (a1 - a0) - (2 * EDGE_PAD) / radius;
   if (usable <= 0) return [];
   const count = Math.floor((usable * radius) / SPACING) + 1;
   const step = SPACING / radius, start = (a0 + a1) / 2 - ((count - 1) * step) / 2;
-  const slots = [];
-  for (let i = 0; i < count; i++) slots.push({ row, i, radius, angle: start + i * step });
-  const mid = (count - 1) / 2;
-  return slots.sort((p, q) => Math.abs(p.i - mid) - Math.abs(q.i - mid) || p.i - q.i);
+  return spreadOrder(count).map((i) => ({ row, i, radius, angle: start + i * step }));
 }
 function bandSlots(angles, ring) {
   const slots = [];
@@ -140,9 +148,9 @@ function orbit(cluster, slot) {
   if (cluster.keystone) return { ring: 0, rho: 0, angle: 0 };
   if (cluster.pattern === 'double') {
     const [ring, idx] = DOUBLE_ORDER[slot];
-    return ring ? { ring: 1, rho: 31, angle: phi + (idx * Math.PI) / 4 } : { ring: 0, rho: 13, angle: phi + Math.PI / 4 + (idx * Math.PI) / 2 };
+    return ring ? { ring: 1, rho: 28, angle: phi + (idx * Math.PI) / 4 } : { ring: 0, rho: 12, angle: phi + Math.PI / 4 + (idx * Math.PI) / 2 };
   }
-  return { ring: 1, rho: 30, angle: phi + (RING_ORDER[slot] * Math.PI) / 6 };
+  return { ring: 1, rho: 27, angle: phi + (RING_ORDER[slot] * Math.PI) / 6 };
 }
 
 const NODE_R = { machine: 5.6, challenge: 5, sherlock: 5.6, sp: 4.6, prolab: 16, endgame: 14, fortress: 14 };
@@ -208,6 +216,11 @@ export function layout(labs, prev) {
       const p = keepSlots ? prevClusters.get(c.id) : null;
       if (p && Number.isInteger(p.slot) && p.slot < slots.length && !taken.has(p.slot)) { c.slot = p.slot; taken.add(p.slot); }
     }
+    if (!taken.size) {
+      // First layout of this band: use the first N slots, handed out in reading order so groups sit together.
+      const first = mine.map((_, i) => i).sort((a, b) => slots[a].row - slots[b].row || slots[a].i - slots[b].i);
+      mine.forEach((c, n) => { c.slot = first[n]; taken.add(first[n]); });
+    }
     let next = 0;
     for (const c of mine) {
       if (c.slot !== undefined) continue;
@@ -216,7 +229,7 @@ export function layout(labs, prev) {
     }
     for (const c of mine) {
       const s = slots[c.slot];
-      const jr = (hash(c.id + '#jr') - 0.5) * 16, ja = ((hash(c.id + '#ja') - 0.5) * 16) / s.radius;
+      const jr = (hash(c.id + '#jr') - 0.5) * 10, ja = ((hash(c.id + '#ja') - 0.5) * 10) / s.radius;
       c.row = s.row; c.col = s.i;
       c.x = round1(Math.cos(s.angle + ja) * (s.radius + jr)); c.y = round1(Math.sin(s.angle + ja) * (s.radius + jr));
       c.pattern = c.keystone ? 'keystone' : hash(c.id + '#pat') < 0.4 ? 'double' : 'ring';
@@ -287,7 +300,8 @@ export function layout(labs, prev) {
       const bend = (hash(c.id + '#bend') - 0.5) * 0.36, dx = b.x - a.x, dy = b.y - a.y;
       addEdge(a, b, (a.x + b.x) / 2 - dy * bend, (a.y + b.y) / 2 + dx * bend);
     }
-    const side = all.find((p) => p.region === c.region && p.band === c.band && p.row === c.row && p.col === c.col + 1);
+    // Sideways: the next cluster along the same row, if it is close enough.
+    const side = all.filter((p) => p.region === c.region && p.band === c.band && p.row === c.row && p.col > c.col && p.col - c.col <= 3).sort((p, q) => p.col - q.col)[0];
     if (side) {
       const a = nearest(c.list, side), b = nearest(side.list, a);
       const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, m = Math.hypot(mx, my) || 1, push = dist(a, b) * 0.13;

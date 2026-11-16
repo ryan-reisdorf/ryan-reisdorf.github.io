@@ -84,6 +84,20 @@ async function anyOf(label, attempts) {
   else if (rows[0]) console.log(`  ${label} fields: ${Object.keys(rows[0]).join(', ')}`);
   return rows;
 }
+// Try endpoints in order and use the first one that answers.
+async function firstOf(label, attempts) {
+  const errors = [];
+  for (const [name, fn] of attempts) {
+    try {
+      const rows = await fn();
+      tried.push(`ok   ${label}: ${name} (${rows.length})`);
+      if (DEBUG && rows[0]) console.log(`[debug] ${label} sample:`, JSON.stringify(rows[0]).slice(0, 700));
+      else if (rows[0]) console.log(`  ${label} fields: ${Object.keys(rows[0]).join(', ')}`);
+      return rows;
+    } catch (err) { if (!(err instanceof ApiError)) throw err; errors.push(err.message); tried.push(`fail ${label}: ${name} -> ${err.message}`); }
+  }
+  throw new ApiError(`${label}: every endpoint failed\n  ` + errors.join('\n  '));
+}
 const optional = async (label, fn, fallback) => {
   try { return await fn(); } catch (err) { if (!(err instanceof ApiError)) throw err; tried.push(`skip ${label} -> ${err.message}`); return fallback; }
 };
@@ -109,8 +123,9 @@ async function machines() {
   if (!tried.some((t) => t.startsWith('ok   machines: retired'))) throw new ApiError('machines: the retired list failed, refusing a partial catalog');
   return byId(rows, own).map((m) => {
     const user = truthy(pick(m, 'authUserInUserOwns', 'auth_user_in_user_owns'));
+    const sp = truthy(m.sp_flag);
     return {
-      id: 'machine-' + m.id, type: 'machine', name: title(m.name), os: m.os || null, category: null,
+      id: (sp ? 'sp-' : 'machine-') + m.id, type: sp ? 'sp' : 'machine', name: title(m.name), os: m.os || null, category: sp ? 'Starting Point' : null,
       difficulty: pick(m, 'difficultyText', 'difficulty_text') || null,
       retired: m.__retired || truthy(m.retired), release: day(pick(m, 'release', 'release_date')), icon: icon(pick(m, 'avatar', 'avatar_thumb')),
       completed: m.__owned, progress: m.__owned ? 100 : user ? 50 : 0,
@@ -124,18 +139,15 @@ async function challenges() {
   for (const c of list || []) cats.set(c.id, c.name);
   const own = (c) => truthy(pick(c, 'is_owned', 'isOwned', 'authUserSolve', 'auth_user_solve', 'solved', 'isCompleted'));
   const legacy = (route) => async () => { const j = await api(route); const rows = j.challenges || j.data; if (!Array.isArray(rows)) throw new ApiError(route + ': no challenge list'); return rows; };
-  const rows = await anyOf('challenges', [
+  const rows = await firstOf('challenges', [
     ['list', () => paged('/challenges')],
-    ['list active', () => paged('/challenges?state=active')],
-    ['list retired', () => paged('/challenges?state=retired')],
-    ['legacy active', legacy('/challenge/list')],
-    ['legacy retired', legacy('/challenge/list/retired')],
+    ['legacy lists', async () => [...(await legacy('/challenge/list')()), ...(await legacy('/challenge/list/retired')())]],
   ]);
   return byId(rows, own).map((c) => ({
     id: 'challenge-' + c.id, type: 'challenge', name: title(c.name), os: null,
     category: title(pick(c, 'category_name', 'categoryName') || c.category?.name || cats.get(pick(c, 'challenge_category_id', 'category_id')) || 'Misc'),
     difficulty: typeof c.difficulty === 'string' ? c.difficulty : pick(c, 'difficulty_text', 'difficultyText') || null,
-    retired: truthy(c.retired) || String(c.state || '').toLowerCase() === 'retired',
+    retired: truthy(c.retired) || /^retired/i.test(String(c.state || '')),
     release: day(pick(c, 'release_date', 'released_at', 'release')), icon: null,
     completed: c.__owned, progress: c.__owned ? 100 : 0,
   }));
@@ -143,22 +155,21 @@ async function challenges() {
 
 async function sherlocks() {
   const own = (s) => truthy(pick(s, 'is_owned', 'isOwned', 'solved', 'isCompleted')) || Number(s.progress) >= 100;
-  const rows = await anyOf('sherlocks', [
+  const rows = await firstOf('sherlocks', [
     ['list', () => paged('/sherlocks')],
-    ['list active', () => paged('/sherlocks?state=active')],
-    ['list retired', () => paged('/sherlocks?state=retired')],
+    ['by state', async () => [...(await paged('/sherlocks?state=active')), ...(await paged('/sherlocks?state=retired'))]],
   ]);
   return byId(rows, own).map((s) => ({
     id: 'sherlock-' + s.id, type: 'sherlock', name: title(s.name), os: null,
     category: title(pick(s, 'category_name', 'categoryName') || s.category?.name || 'General'),
     difficulty: typeof s.difficulty === 'string' ? s.difficulty : pick(s, 'difficulty_text', 'difficultyText') || null,
-    retired: truthy(s.retired) || String(s.state || '').toLowerCase() === 'retired',
+    retired: truthy(s.retired) || /^retired/i.test(String(s.state || '')),
     release: day(pick(s, 'release_date', 'release_at', 'released_at')), icon: icon(pick(s, 'avatar', 'image')),
     completed: s.__owned, progress: s.__owned ? 100 : Math.max(0, Math.min(99, Math.round(Number(s.progress) || 0))),
   }));
 }
 
-const LEVELS = ['Easy', 'Easy', 'Medium', 'Hard', 'Insane', 'Insane'];
+const SKILL = { beginner: 'Easy', fundamental: 'Easy', intermediate: 'Medium', advanced: 'Hard', expert: 'Insane' };
 async function prolabs() {
   const json = await api('/prolabs');
   const labs = json.data?.labs || json.labs || (Array.isArray(json.data) ? json.data : null);
@@ -168,40 +179,34 @@ async function prolabs() {
   tried.push(`ok   prolabs (${labs.length})`);
   return labs.map((l) => {
     const pct = Math.max(0, Math.min(100, Math.round(Number(pick(l, 'ownership', 'progress', 'ownership_percentage')) || 0)));
-    const level = Number(pick(l.designated_level || {}, 'level') ?? pick(l, 'level', 'skill_level'));
     return {
-      id: 'prolab-' + l.id, type: 'prolab', name: title(l.name), os: null, category: 'Pro Lab',
-      difficulty: Number.isFinite(level) ? LEVELS[Math.max(0, Math.min(5, level))] : null,
-      retired: false, release: day(pick(l, 'release_at', 'release_date')), icon: icon(pick(l, 'cover_img_url', 'cover_image_url', 'avatar')),
+      id: 'prolab-' + l.id, type: 'prolab', name: title(l.name), os: null, category: title(l.designated_category) || 'Pro Lab',
+      difficulty: SKILL[String(l.skill_level || '').toLowerCase()] || null,
+      retired: false, release: day(pick(l, 'release_at', 'release_date')), icon: icon(pick(l, 'avatar_url', 'cover_img_url')),
       completed: pct >= 100, progress: pct,
     };
   });
 }
 
-// Fortresses and Endgames: a short list, then one call each for flag progress.
-async function flagLabs(kind, listRoute, detailRoute, category) {
+// Fortresses (and Endgames, where the API still has them): the list already carries flag progress.
+async function flagLabs(kind, listRoute, category) {
   const json = await api(listRoute);
   const raw = json.data ?? json;
   const list = Array.isArray(raw) ? raw : Object.values(raw || {}).filter((v) => v && typeof v === 'object' && v.id !== undefined);
   if (!list.length) throw new ApiError(listRoute + ': empty list');
   console.log(`  ${kind} fields: ${Object.keys(list[0]).join(', ')}`);
   tried.push(`ok   ${kind} (${list.length})`);
-  const out = [];
-  for (const item of list) {
-    const detail = await optional(`${kind} ${item.id}`, async () => (await api(detailRoute(item.id))).data, null);
-    if (DEBUG && detail && !out.length) console.log(`[debug] ${kind} detail:`, JSON.stringify(detail).slice(0, 900));
-    const flags = Array.isArray(detail?.flags) ? detail.flags : [];
-    const owned = flags.filter((f) => truthy(pick(f, 'owned', 'is_owned'))).length;
-    let pct = Number(pick(detail || {}, 'progress_percent', 'progress', 'ownership'));
-    if (!Number.isFinite(pct)) pct = flags.length ? (owned / flags.length) * 100 : 0;
-    const done = truthy(pick(detail || {}, 'has_user_finished', 'has_completed', 'completed')) || pct >= 100;
-    out.push({
+  return list.map((item) => {
+    const flags = Number(pick(item, 'number_of_flags', 'endgame_flags_count')) || 0, owned = Number(pick(item, 'owned_flags', 'owned_flags_count')) || 0;
+    let pct = flags ? (owned / flags) * 100 : Number(item.ownership) || 0;
+    pct = Math.max(0, Math.min(100, pct));
+    const done = pct >= 100 || truthy(pick(item, 'has_user_finished', 'completed'));
+    return {
       id: `${kind}-${item.id}`, type: kind, name: title(item.name), os: null, category,
       difficulty: null, retired: false, release: day(pick(item, 'release_at', 'created_at')), icon: icon(pick(item, 'image', 'avatar_url', 'cover_image_url')),
-      completed: done, progress: done ? 100 : Math.round(Math.max(0, Math.min(99, pct))),
-    });
-  }
-  return out;
+      completed: done, progress: done ? 100 : Math.round(Math.min(99, pct)),
+    };
+  });
 }
 
 async function startingPoint() {
@@ -268,10 +273,15 @@ async function main() {
   console.log('Fetching the HTB catalog...');
   const labs = [
     ...(await machines()), ...(await challenges()), ...(await sherlocks()), ...(await prolabs()),
-    ...(await flagLabs('fortress', '/fortresses', (id) => '/fortress/' + id, 'Fortress')),
-    ...(await flagLabs('endgame', '/endgames', (id) => '/endgame/' + id, 'Endgame')),
-    ...(await startingPoint()),
+    ...(await flagLabs('fortress', '/fortresses', 'Fortress')),
+    // Endgames and the Starting Point tiers have come and gone from the API: use them when they answer.
+    ...(await optional('endgames', () => flagLabs('endgame', '/endgames', 'Endgame'), [])),
+    ...(await optional('starting point', startingPoint, [])),
   ].filter((n) => n.name);
+  // The same lab can arrive from two endpoints (Starting Point machines): keep the first copy.
+  const unique = new Map();
+  for (const lab of labs) if (!unique.has(lab.id)) unique.set(lab.id, lab);
+  labs.length = 0; labs.push(...unique.values());
   const who = await profile();
   console.log(tried.map((t) => '  ' + t).join('\n'));
 
