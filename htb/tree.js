@@ -357,8 +357,8 @@
   }
   // Leave room for the UI overlays when fitting.
   function insets() {
-    if (W >= 900) return { top: 64, bottom: 16, left: 300, right: 16 };     // controls live in a left sidebar
-    return { top: 150, bottom: 64, left: 8, right: 8 };
+    // On a narrow stage, keep the tree clear of the legend (top) and the view buttons (bottom).
+    return W < 700 ? { top: 44, bottom: 52, left: 8, right: 8 } : { top: 12, bottom: 12, left: 12, right: 12 };
   }
   // Camera that fits a world rectangle into the part of the screen not covered by UI.
   function fitTarget(x0, y0, x1, y1) {
@@ -390,6 +390,7 @@
 
   canvas.addEventListener('pointerdown', (ev) => {
     canvas.setPointerCapture(ev.pointerId);
+    if (!root.contains(document.activeElement)) root.focus({ preventScroll: true });
     pointers.set(ev.pointerId, local(ev));
     anim = null;
     if (pointers.size === 1) drag = { start: local(ev), moved: false, view: { ...view } };
@@ -436,8 +437,10 @@
   canvas.addEventListener('pointercancel', release);
   canvas.addEventListener('pointerleave', () => { if (hovered) { hovered = null; requestRender(); } hideTip(); });
   canvas.addEventListener('wheel', (ev) => {
-    ev.preventDefault();
     const [sx, sy] = local(ev), delta = ev.deltaMode === 1 ? ev.deltaY * 33 : ev.deltaY;
+    // Zoomed all the way out and still scrolling out: hand the wheel back to the page.
+    if (!data || (delta > 0 && view.k <= fitK * 1.001 && !root.classList.contains('full'))) return;
+    ev.preventDefault();
     zoomAt(sx, sy, Math.exp(-delta * (ev.ctrlKey ? 0.01 : 0.0016)));
     hideTip();
   }, { passive: false });
@@ -447,8 +450,9 @@
     if (ev.key === 'Escape') {
       if (!$('q-results').hidden) { clearResults(); return; }
       if (!panel.hidden) { closePanel(); return; }
+      if (root.classList.contains('full')) { setFull(false); return; }
     }
-    if (!data || ev.metaKey || ev.ctrlKey || ev.altKey || /^(INPUT|SELECT|TEXTAREA)$/.test(ev.target.tagName) || ev.target.closest('.tree-search, .tree-panel')) return;
+    if (!data || ev.metaKey || ev.ctrlKey || ev.altKey || !root.contains(ev.target) || ev.target.closest('.tree-panel')) return;
     const step = 120 / view.k;
     if (ev.key === '+' || ev.key === '=') zoomAt(W / 2, H / 2, 1.4);
     else if (ev.key === '-' || ev.key === '_') zoomAt(W / 2, H / 2, 1 / 1.4);
@@ -457,10 +461,16 @@
     else if (ev.key === 'ArrowRight') { view.x += step; clampView(); requestRender(); }
     else if (ev.key === 'ArrowUp') { view.y -= step; clampView(); requestRender(); }
     else if (ev.key === 'ArrowDown') { view.y += step; clampView(); requestRender(); }
-    else if (ev.key === '/') { $('q').focus(); }
     else return;
     ev.preventDefault();
   });
+
+  // Full screen: the stage covers the window until Esc or the button.
+  function setFull(on) {
+    root.classList.toggle('full', on); document.documentElement.classList.toggle('tree-full', on);
+    $('full').textContent = on ? 'Exit full screen' : 'Full screen'; $('full').setAttribute('aria-pressed', String(on));
+    resize();
+  }
 
   /* ---------- tooltip ---------- */
   function showTip(n, sx, sy) {
@@ -536,11 +546,11 @@
   function goTo(n) {
     // Keep the lab clear of the panel: shift the camera so it sits in the free part of the screen.
     const k = Math.max(view.k, 2.6), narrow = W < 700;
-    const dx = narrow ? 0 : (W >= 900 ? 50 : 190) / k, dy = narrow ? (H * 0.22) / k : 0;
+    const dx = narrow ? 0 : 190 / k, dy = narrow ? (H * 0.22) / k : 0;
     flyTo(n.x + dx, n.y + dy, k);
     select(n);
   }
-  $('panel-close').addEventListener('click', () => { closePanel(); $('q').focus({ preventScroll: true }); });
+  $('panel-close').addEventListener('click', () => { closePanel(); root.focus({ preventScroll: true }); });
 
   /* ---------- search ---------- */
   const q = $('q'), results = $('q-results');
@@ -585,16 +595,11 @@
       Object.assign(filter, { done: $('f-done').checked, type: $('f-type').value, diff: $('f-diff').value, extras: $('f-extras').checked });
       const count = nodes.filter(matches).length;
       $('f-count').textContent = filtering() ? `Showing ${fmt(count)} of ${fmt(nodes.length)} labs` : '';
-      $('filters-toggle').classList.toggle('on', !!filtering());
       if (selected && !matches(selected)) closePanel();
       requestRender();
     };
     for (const id of ['f-done', 'f-type', 'f-diff', 'f-extras']) $(id).addEventListener('change', apply);
     $('f-clear').addEventListener('click', () => { $('f-done').checked = $('f-extras').checked = false; $('f-type').value = $('f-diff').value = ''; apply(); });
-    $('filters-toggle').addEventListener('click', () => {
-      const open = $('filters').classList.toggle('open');
-      $('filters-toggle').setAttribute('aria-expanded', String(open));
-    });
 
     const done = nodes.filter((n) => n.completed).length;
     const stats = $('stats');
@@ -613,18 +618,18 @@
       });
       stats.append(b);
     }
-    if (data.syncedAt) $('synced').textContent = 'Synced ' + new Date(data.syncedAt).toISOString().slice(0, 10);
+    if (data.syncedAt) $('synced').textContent = 'Synced ' + new Date(data.syncedAt).toISOString().slice(0, 10) + ' · ';
 
     $('zoom-in').addEventListener('click', () => zoomAt(W / 2, H / 2, 1.5));
     $('zoom-out').addEventListener('click', () => zoomAt(W / 2, H / 2, 1 / 1.5));
     $('reset').addEventListener('click', () => resetView(true));
     for (const el of $('legend').querySelectorAll('[data-region]')) el.style.background = regionById[el.dataset.region]?.color || '#888';
-    if (innerWidth >= 900 && innerHeight >= 940) $('legend').open = true;
+    $('full').addEventListener('click', () => setFull(!root.classList.contains('full')));
   }
 
   /* ---------- boot ---------- */
   async function boot() {
-    root.hidden = false;
+    $('tree-section').hidden = false;
     resize();
     const get = (url) => fetch(url, { cache: 'no-cache' }).then((r) => { if (!r.ok) throw new Error(url + ' ' + r.status); return r.json(); });
     try {
@@ -640,7 +645,7 @@
     build(); setupUi(); resize(); resetView(false);
     const wanted = decodeURIComponent(location.hash.slice(1));
     const target = wanted && nodes.find((n) => n.id === wanted);
-    if (target) { Object.assign(view, { x: target.x, y: target.y, k: clampK(2.6) }); select(target, { focus: false }); }
+    if (target) { Object.assign(view, { x: target.x, y: target.y, k: clampK(2.6) }); select(target, { focus: false }); root.scrollIntoView({ block: 'center' }); }
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(requestRender);
     root.classList.add('ready');
     window.__tree = { view, nodes, toScreen, draw, select, goTo };     // handy in the console
