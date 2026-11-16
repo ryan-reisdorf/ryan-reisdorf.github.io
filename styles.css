@@ -273,3 +273,5 @@ h1, h2, h3, p, dl, dd { margin: 0; }
 .nav nav a[aria-current="page"] { text-decoration: underline; text-underline-offset: 4px; }
 .nav-name { white-space: nowrap; }
 @media (max-width: 420px) { .nav nav { gap: 12px; } .nav { font-size: 15px; } }
+.profile-link { color: var(--fg); text-decoration: underline; text-underline-offset: 4px; }
+.profile-link:hover { text-decoration-thickness: 2px; }
