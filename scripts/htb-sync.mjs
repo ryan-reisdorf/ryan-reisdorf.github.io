@@ -283,6 +283,15 @@ async function main() {
   for (const lab of labs) if (!unique.has(lab.id)) unique.set(lab.id, lab);
   labs.length = 0; labs.push(...unique.values());
   const who = await profile();
+  if (DEBUG) {      // endpoint discovery: prints status and shape only
+    for (const route of ['/sp/tiers', '/starting-point/tiers', '/starting-point/tier/1', '/starting-point', '/sp/progress', '/sp/machines',
+      `/profile/activity/${USER_ID}`, `/user/activity/${USER_ID}`, `/user/profile/content/${USER_ID}`, `/user/profile/progress/sherlocks/${USER_ID}`,
+      `/user/profile/progress/challenges/${USER_ID}`, `/user/profile/progress/machines/os/${USER_ID}`, `/user/profile/progress/prolab/${USER_ID}`, '/user/info',
+      `/user/profile/basic/${USER_ID}`, '/sherlocks/631', '/sherlocks/631/progress', '/sherlocks/631/info', '/sherlocks/631/play', '/user/profile/summary', `/user/profile/graph/1Y/${USER_ID}`]) {
+      try { const j = await api(route); console.log(`[probe] ${route} -> ${JSON.stringify(j).slice(0, 420)}`); }
+      catch (err) { console.log(`[probe] ${route} -> ${String(err.message).slice(0, 110)}`); }
+    }
+  }
   console.log(tried.map((t) => '  ' + t).join('\n'));
 
   const prevNodes = new Map((prev?.nodes || []).map((n) => [n.id, n]));
@@ -308,15 +317,18 @@ async function main() {
 
   const body = { version: 1, user: { id: Number(USER_ID), name: who.name }, layout: result.layout, regions: CONFIG.regions, bands: CONFIG.bands.map((b) => b.label), clusters: result.clusters, nodes: result.nodes, edges: result.edges, roots: result.roots };
   const { syncedAt: _ignored, ...prevBody } = prev || {};
-  if (JSON.stringify(prevBody) === JSON.stringify(body)) { console.log('No changes since the last sync.'); return; }
   if (DRY) { console.log('Dry run: not writing files.'); return; }
-
-  await mkdir(path.dirname(DATA), { recursive: true });
-  await writeFile(DATA, JSON.stringify({ ...body, syncedAt: new Date().toISOString() }) + '\n');
-  console.log('Wrote data/htb.json');
+  if (JSON.stringify(prevBody) === JSON.stringify(body)) console.log('No changes since the last sync.');
+  else {
+    await mkdir(path.dirname(DATA), { recursive: true });
+    await writeFile(DATA, JSON.stringify({ ...body, syncedAt: new Date().toISOString() }) + '\n');
+    console.log('Wrote data/htb.json');
+  }
+  // Keep the plain (no-JS, screen reader) list in htb.html in step with the data.
   const page = await readFile(PAGE, 'utf8').catch(() => null);
   const marks = /(<!-- htb-list:start -->)[\s\S]*?(<!-- htb-list:end -->)/;
-  if (page && marks.test(page)) { await writeFile(PAGE, page.replace(marks, (_m, a, b) => a + listHtml(result.nodes) + b)); console.log('Updated the plain list in htb.html'); }
+  const next = page && marks.test(page) ? page.replace(marks, (_m, a, b) => a + listHtml(result.nodes) + b) : page;
+  if (next !== page) { await writeFile(PAGE, next); console.log('Updated the plain list in htb.html'); }
 }
 
 main().catch((err) => {
